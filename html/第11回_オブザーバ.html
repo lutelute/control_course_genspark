@@ -95,6 +95,13 @@
             border-radius: 5px;
             border-left: 3px solid #3498db;
         }
+        .theory-box {
+            background: #e8f4f8;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
         ul {
             padding-left: 20px;
         }
@@ -200,7 +207,7 @@
 <p><strong>次元の問題：</strong></p>
 <ul>
 <li>状態 $\mathbf{x} \in \mathbb{R}^n$（例：n次元）</li>
-<li>出力 $\mathbf{y} \in \mathbb{R}^p$（例：p次元、通常 $p < n$）</li>
+<li>出力 $\mathbf{y} \in \mathbb{R}^p$（例：p次元、通常 $p &lt; n$）</li>
 </ul>
 
 <p><strong>行列 $\mathbf{L} \in \mathbb{R}^{n \times p}$ の役割：</strong></p>
@@ -221,14 +228,14 @@
 
 <p>以上の考察から、<strong>オブザーバ（状態推定器）</strong>の構造が導かれます：</p>
 
-<div class="step-box">
+<div class="theory-box">
 <p><strong>システム：</strong></p>
-<p>$$\dot{\mathbf{x}} = \mathbf{A}\mathbf{x} + \mathbf{B}\mathbf{u}$$
-$$\mathbf{y} = \mathbf{C}\mathbf{x}$$</p>
+<p>$$\dot{\mathbf{x}} = \mathbf{A}\mathbf{x} + \mathbf{B}\mathbf{u}$$</p>
+<p>$$\mathbf{y} = \mathbf{C}\mathbf{x}$$</p>
 
 <p><strong>オブザーバ：</strong></p>
-<p>$$\dot{\hat{\mathbf{x}}} = \mathbf{A}\hat{\mathbf{x}} + \mathbf{B}\mathbf{u} + \mathbf{L}(\mathbf{y} - \hat{\mathbf{y}})$$
-$$\hat{\mathbf{y}} = \mathbf{C}\hat{\mathbf{x}}$$</p>
+<p>$$\dot{\hat{\mathbf{x}}} = \mathbf{A}\hat{\mathbf{x}} + \mathbf{B}\mathbf{u} + \mathbf{L}(\mathbf{y} - \hat{\mathbf{y}})$$</p>
+<p>$$\hat{\mathbf{y}} = \mathbf{C}\hat{\mathbf{x}}$$</p>
 </div>
 
 <div class="important-note">
@@ -247,7 +254,301 @@ $$\hat{\mathbf{y}} = \mathbf{C}\hat{\mathbf{x}}$$</p>
 <p>この構造により、オブザーバは「予測」（モデルベース）と「補正」（測定ベース）を組み合わせた推定器となります。</p>
 </div>
 
-<p>残りの内容（推定誤差のダイナミクス、極配置、具体例など）は元のファイルと同じです...</p>
+<h3>3.2 推定誤差のダイナミクス</h3>
+
+<h4>なぜ誤差の解析が重要か？</h4>
+
+<p>オブザーバが「良い推定器」であるためには、推定誤差 $\mathbf{e} = \mathbf{x} - \hat{\mathbf{x}}$ が時間とともに0に収束する必要があります。この挙動を理解するために、誤差のダイナミクスを詳しく調べます。</p>
+
+<h4>誤差ダイナミクスの導出</h4>
+
+<div class="step-box">
+<p><strong>Step 1: 実システムと推定システムの方程式</strong></p>
+<pre>
+実システム：    ẋ = Ax + Bu
+推定システム：   x̂̇ = Ax̂ + Bu + L(y - ŷ)
+</pre>
+</div>
+
+<div class="step-box">
+<p><strong>Step 2: 推定誤差の時間微分</strong></p>
+
+<p>推定誤差 $\mathbf{e} = \mathbf{x} - \hat{\mathbf{x}}$ の時間微分：</p>
+
+<p>$$\dot{\mathbf{e}} = \dot{\mathbf{x}} - \dot{\hat{\mathbf{x}}}$$</p>
+</div>
+
+<div class="step-box">
+<p><strong>Step 3: 各項を代入</strong></p>
+
+<p>$$\dot{\mathbf{e}} = \mathbf{A}\mathbf{x} + \mathbf{B}\mathbf{u} - [\mathbf{A}\hat{\mathbf{x}} + \mathbf{B}\mathbf{u} + \mathbf{L}(\mathbf{y} - \hat{\mathbf{y}})]$$</p>
+</div>
+
+<div class="step-box">
+<p><strong>Step 4: 項をまとめる</strong></p>
+
+<p>$$\dot{\mathbf{e}} = \mathbf{A}(\mathbf{x} - \hat{\mathbf{x}}) + \mathbf{B}\mathbf{u} - \mathbf{B}\mathbf{u} - \mathbf{L}(\mathbf{y} - \hat{\mathbf{y}})$$</p>
+
+<p>$$= \mathbf{A}\mathbf{e} - \mathbf{L}(\mathbf{y} - \hat{\mathbf{y}})$$</p>
+</div>
+
+<div class="step-box">
+<p><strong>Step 5: 出力誤差を状態誤差で表現</strong></p>
+
+<p>$\mathbf{y} = \mathbf{C}\mathbf{x}$, $\hat{\mathbf{y}} = \mathbf{C}\hat{\mathbf{x}}$ なので：</p>
+
+<p>$$\mathbf{y} - \hat{\mathbf{y}} = \mathbf{C}\mathbf{x} - \mathbf{C}\hat{\mathbf{x}} = \mathbf{C}(\mathbf{x} - \hat{\mathbf{x}}) = \mathbf{C}\mathbf{e}$$</p>
+</div>
+
+<div class="theory-box">
+<p><strong>Step 6: 最終的な誤差ダイナミクス</strong></p>
+
+<p>$$\dot{\mathbf{e}} = \mathbf{A}\mathbf{e} - \mathbf{L}\mathbf{C}\mathbf{e} = (\mathbf{A} - \mathbf{L}\mathbf{C})\mathbf{e}$$</p>
+</div>
+
+<h4>この結果の深い意味</h4>
+
+<div class="important-note">
+<p><strong>重要な観察：</strong></p>
+
+<ol>
+<li><strong>入力独立性</strong>：推定誤差のダイナミクスは制御入力 $\mathbf{u}$ に依存しない
+   <ul>
+     <li>これは非常に重要な性質</li>
+     <li>制御入力がどのように変化しても、推定精度に影響しない</li>
+     <li>オブザーバの設計が制御器の設計と独立に行える基盤</li>
+   </ul>
+</li>
+
+<li><strong>誤差の自律システム</strong>：$\dot{\mathbf{e}} = (\mathbf{A} - \mathbf{L}\mathbf{C})\mathbf{e}$ は自律的な線形システム
+   <ul>
+     <li>誤差は指数的に変化（収束または発散）</li>
+     <li>行列 $(\mathbf{A} - \mathbf{L}\mathbf{C})$ の固有値で挙動が決まる</li>
+   </ul>
+</li>
+
+<li><strong>設計パラメータ</strong>：行列 $\mathbf{L}$ が誤差のダイナミクスを完全に制御
+   <ul>
+     <li>$\mathbf{L}$ を適切に選ぶことで、$\mathbf{e}(t) \to \mathbf{0}$ とできる</li>
+     <li>これがオブザーバ設計の核心</li>
+   </ul>
+</li>
+</ol>
+</div>
+
+<h4>物理的解釈</h4>
+
+<p>誤差ダイナミクス $\dot{\mathbf{e}} = (\mathbf{A} - \mathbf{L}\mathbf{C})\mathbf{e}$ の各項：</p>
+
+<ul>
+<li><strong>$\mathbf{A}\mathbf{e}$項</strong>：システム本来のダイナミクスによる誤差の自然な発展
+  <ul><li>$\mathbf{A}$ が不安定なら、この項は誤差を増大させる</li></ul>
+</li>
+  
+<li><strong>$-\mathbf{L}\mathbf{C}\mathbf{e}$項</strong>：測定に基づく補正効果
+  <ul>
+    <li>出力測定を通じて誤差情報を取得し、それを状態空間にフィードバック</li>
+    <li>$\mathbf{L}$ が大きいほど、強い補正が働く</li>
+  </ul>
+</li>
+</ul>
+
+<p>この競合により、適切な $\mathbf{L}$ を選ぶことで誤差を安定に収束させることができます。</p>
+
+<h3>3.3 オブザーバの極配置</h3>
+
+<p>推定誤差が減衰するためには、$\mathbf{A} - \mathbf{L}\mathbf{C}$ が安定である必要があります。</p>
+
+<div class="theory-box">
+<p><strong>オブザーバ設計定理：</strong></p>
+
+<p>システム $(\mathbf{A}, \mathbf{C})$ が可観測ならば、任意の極の集合に対して、$\mathbf{A} - \mathbf{L}\mathbf{C}$ の固有値を希望する位置に配置するオブザーバゲイン $\mathbf{L}$ が存在する。</p>
+</div>
+
+<div class="step-box">
+<p><strong>設計手順：</strong></p>
+
+<p>双対性を利用します。$(\mathbf{A}, \mathbf{C})$ が可観測 ⇔ $(\mathbf{A}^T, \mathbf{C}^T)$ が可制御</p>
+
+<p>したがって、状態フィードバックの極配置法を双対システムに適用：</p>
+
+<ol>
+<li>双対システム $(\mathbf{A}^T, \mathbf{C}^T)$ に対してゲイン $\mathbf{K}^T$ を設計</li>
+<li>$\mathbf{L} = \mathbf{K}^T$ とする</li>
+</ol>
+</div>
+
+<h3>3.4 Ackermannの公式（オブザーバ版）</h3>
+
+<p>$$\mathbf{L} = \alpha_o(\mathbf{A})\mathbf{O}^{-1}\begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \\ 1 \end{bmatrix}$$</p>
+
+<p>ここで：</p>
+<ul>
+<li>$\mathbf{O} = \begin{bmatrix} \mathbf{C}^T & (\mathbf{C}\mathbf{A})^T & \cdots & (\mathbf{C}\mathbf{A}^{n-1})^T \end{bmatrix}$：可観測性行列の転置</li>
+<li>$\alpha_o(\mathbf{A})$：希望する特性多項式を $\mathbf{A}$ に代入</li>
+</ul>
+
+<h2>4. オブザーバの極の選択</h2>
+
+<h3>4.1 基本的な考え方</h3>
+
+<p>オブザーバの極は、制御器の極よりも速く（左側に）配置するのが一般的です。</p>
+
+<div class="important-note">
+<p><strong>理由：</strong></p>
+<ul>
+<li>推定誤差を素早く減衰させる</li>
+<li>フィードバック制御が正確な状態推定に基づいて動作する</li>
+</ul>
+
+<p><strong>経験則：</strong></p>
+<ul>
+<li>オブザーバの極の実部を、制御器の極の実部の2～5倍に設定</li>
+</ul>
+</div>
+
+<h3>4.2 注意事項</h3>
+
+<ul>
+<li>極を左側に配置しすぎると、センサノイズを増幅</li>
+<li>モデル化誤差の影響が大きくなる</li>
+<li>トレードオフの考慮が必要</li>
+</ul>
+
+<h2>5. 最小次元オブザーバ（Reduced-Order Observer）</h2>
+
+<h3>5.1 動機</h3>
+
+<p>出力 $\mathbf{y}$ は直接測定されているため、これらの状態については推定不要です。測定されていない状態のみを推定する<strong>最小次元オブザーバ</strong>が効率的です。</p>
+
+<h3>5.2 状態の分割</h3>
+
+<p>状態を測定される部分と測定されない部分に分割：</p>
+
+<p>$$\mathbf{x} = \begin{bmatrix} \mathbf{x}_a \\ \mathbf{x}_b \end{bmatrix}, \quad \mathbf{y} = \mathbf{x}_a$$</p>
+
+<p>ここで、$\mathbf{x}_a \in \mathbb{R}^p$（測定される）、$\mathbf{x}_b \in \mathbb{R}^{n-p}$（測定されない）</p>
+
+<h3>5.3 システムの分割</h3>
+
+<p>$$\begin{bmatrix} \dot{\mathbf{x}}_a \\ \dot{\mathbf{x}}_b \end{bmatrix} = \begin{bmatrix} \mathbf{A}_{aa} & \mathbf{A}_{ab} \\ \mathbf{A}_{ba} & \mathbf{A}_{bb} \end{bmatrix}\begin{bmatrix} \mathbf{x}_a \\ \mathbf{x}_b \end{bmatrix} + \begin{bmatrix} \mathbf{B}_a \\ \mathbf{B}_b \end{bmatrix}\mathbf{u}$$</p>
+
+<p>測定されない状態のダイナミクス：</p>
+
+<p>$$\dot{\mathbf{x}}_b = \mathbf{A}_{ba}\mathbf{x}_a + \mathbf{A}_{bb}\mathbf{x}_b + \mathbf{B}_b\mathbf{u}$$</p>
+
+<h3>5.4 最小次元オブザーバの構造</h3>
+
+<p>$$\dot{\hat{\mathbf{x}}}_b = \mathbf{A}_{bb}\hat{\mathbf{x}}_b + \mathbf{A}_{ba}\mathbf{y} + \mathbf{B}_b\mathbf{u} + \mathbf{L}_r(\dot{\mathbf{y}} - \mathbf{A}_{aa}\mathbf{y} - \mathbf{A}_{ab}\hat{\mathbf{x}}_b - \mathbf{B}_a\mathbf{u})$$</p>
+
+<p>ただし、$\dot{\mathbf{y}}$ の微分が必要なため、実装が難しい。</p>
+
+<p><strong>実用的な形式：</strong></p>
+
+<p>補助変数 $\mathbf{z} = \hat{\mathbf{x}}_b - \mathbf{L}_r\mathbf{y}$ を導入すると、微分を含まない形式になります。</p>
+
+<h2>6. 観測器併合制御系（Observer-Based Controller）</h2>
+
+<h3>6.1 制御器とオブザーバの統合</h3>
+
+<p>状態フィードバック制御：</p>
+<p>$$\mathbf{u} = -\mathbf{K}\mathbf{x}$$</p>
+
+<p>オブザーバで推定した状態を使用：</p>
+<p>$$\mathbf{u} = -\mathbf{K}\hat{\mathbf{x}}$$</p>
+
+<h3>6.2 全体のシステム</h3>
+
+<p>元のシステム：</p>
+<p>$$\dot{\mathbf{x}} = \mathbf{A}\mathbf{x} + \mathbf{B}\mathbf{u} = \mathbf{A}\mathbf{x} - \mathbf{B}\mathbf{K}\hat{\mathbf{x}}$$</p>
+
+<p>オブザーバ：</p>
+<p>$$\dot{\hat{\mathbf{x}}} = \mathbf{A}\hat{\mathbf{x}} + \mathbf{B}\mathbf{u} + \mathbf{L}(\mathbf{y} - \mathbf{C}\hat{\mathbf{x}})$$</p>
+<p>$$= (\mathbf{A} - \mathbf{B}\mathbf{K} - \mathbf{L}\mathbf{C})\hat{\mathbf{x}} + \mathbf{L}\mathbf{C}\mathbf{x}$$</p>
+
+<p>拡大システム：</p>
+<p>$$\begin{bmatrix} \dot{\mathbf{x}} \\ \dot{\mathbf{e}} \end{bmatrix} = \begin{bmatrix} \mathbf{A} - \mathbf{B}\mathbf{K} & \mathbf{B}\mathbf{K} \\ \mathbf{0} & \mathbf{A} - \mathbf{L}\mathbf{C} \end{bmatrix}\begin{bmatrix} \mathbf{x} \\ \mathbf{e} \end{bmatrix}$$</p>
+
+<p>ここで、$\mathbf{e} = \mathbf{x} - \hat{\mathbf{x}}$</p>
+
+<h3>6.3 分離定理（Separation Principle）</h3>
+
+<div class="theory-box">
+<p><strong>定理：</strong></p>
+
+<p>観測器併合制御系の極は、制御器の極（$\mathbf{A} - \mathbf{B}\mathbf{K}$ の固有値）とオブザーバの極（$\mathbf{A} - \mathbf{L}\mathbf{C}$ の固有値）の和集合である。</p>
+
+<p><strong>意味：</strong></p>
+<ul>
+<li>制御器とオブザーバの設計を独立に行える</li>
+<li>それぞれを別々に最適化して、組み合わせることができる</li>
+</ul>
+</div>
+
+<h2>7. 具体例</h2>
+
+<h3>7.1 例題</h3>
+
+<p>システム：</p>
+<p>$$\mathbf{A} = \begin{bmatrix} 0 & 1 \\ -2 & -3 \end{bmatrix}, \quad \mathbf{B} = \begin{bmatrix} 0 \\ 1 \end{bmatrix}, \quad \mathbf{C} = \begin{bmatrix} 1 & 0 \end{bmatrix}$$</p>
+
+<p><strong>制御器設計：</strong> 極を $\lambda_1 = -2$, $\lambda_2 = -3$ に配置</p>
+
+<p>Ackermannの公式により：$\mathbf{K} = \begin{bmatrix} 4 & 3 \end{bmatrix}$</p>
+
+<p><strong>オブザーバ設計：</strong> 極を $\lambda_1 = -6$, $\lambda_2 = -7$ に配置（制御器の2倍速）</p>
+
+<p>双対性とAckermannの公式により：$\mathbf{L} = \begin{bmatrix} 11 \\ 36 \end{bmatrix}$</p>
+
+<p><strong>観測器併合制御系の極：</strong> $\{-2, -3, -6, -7\}$</p>
+
+<h2>8. カルマンフィルタとの関係</h2>
+
+<h3>8.1 決定論的オブザーバ vs 確率的オブザーバ</h3>
+
+<ul>
+<li><strong>Luenbergerオブザーバ</strong>（本講義）：決定論的、極配置による設計</li>
+<li><strong>カルマンフィルタ</strong>（次回以降）：確率的、ノイズ統計に基づく最適設計</li>
+</ul>
+
+<h3>8.2 統一的視点</h3>
+
+<p>カルマンフィルタは、オブザーバゲイン $\mathbf{L}$ を最適化問題の解として与えます（最小分散推定）。</p>
+
+<h2>9. 演習問題</h2>
+
+<h3>問題1</h3>
+<p>以下のシステムに対して、オブザーバの極を $\lambda_1 = -5$, $\lambda_2 = -6$ に配置するオブザーバゲイン $\mathbf{L}$ を求めよ：</p>
+<p>$$\mathbf{A} = \begin{bmatrix} 0 & 1 \\ -1 & -2 \end{bmatrix}, \quad \mathbf{C} = \begin{bmatrix} 1 & 0 \end{bmatrix}$$</p>
+
+<h3>問題2</h3>
+<p>分離定理が成り立つ理由を、拡大システムの行列の構造から説明せよ。</p>
+
+<h3>問題3</h3>
+<p>オブザーバの極を制御器の極よりも速く設定する理由を、物理的・工学的観点から説明せよ。</p>
+
+<h2>10. まとめ</h2>
+
+<ul>
+<li>オブザーバは、出力測定からシステムの状態を推定する</li>
+<li>同一次元オブザーバは、すべての状態を推定</li>
+<li>最小次元オブザーバは、測定されない状態のみを推定</li>
+<li>オブザーバの極配置は、可観測性が条件</li>
+<li>分離定理により、制御器とオブザーバを独立に設計可能</li>
+<li>オブザーバの極は制御器より速く設定するのが一般的</li>
+</ul>
+
+<h2>次回予告</h2>
+
+<p>次回は、<strong>最適レギュレータ</strong>について学びます。制御性能を最大化する系統的な制御器設計手法です。</p>
+
+<h2>参考文献</h2>
+
+<ol>
+<li>Katsuhiko Ogata, "Modern Control Engineering"</li>
+<li>児玉慎三・須田信英『システム制御理論入門』コロナ社</li>
+<li>Gene F. Franklin et al., "Feedback Control of Dynamic Systems"</li>
+</ol>
 
     </div>
 </body>
