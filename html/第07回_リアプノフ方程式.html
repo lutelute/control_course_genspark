@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第7回: リアプノフ方程式</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #e74c3c; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .theory-box { background: #fef5e7; padding: 20px; border-left: 4px solid #e74c3c; margin: 20px 0; border-radius: 5px; }
+        .simulator { background: #f9f9f9; padding: 25px; border-radius: 8px; margin: 25px 0; border: 2px solid #ddd; }
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0; }
+        .control-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; color: #555; margin-bottom: 5px; }
+        input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        button { background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        button:hover { background: #c0392b; }
+        .plot-container { margin: 20px 0; }
+        .matrix-display { background: white; padding: 15px; border-radius: 5px; font-family: monospace; margin: 10px 0; border: 1px solid #ddd; white-space: pre-wrap; }
+        .example { background: #e8f8f5; padding: 15px; border-left: 4px solid #1abc9c; margin: 20px 0; border-radius: 5px; }
+        .stability-indicator { padding: 15px; border-radius: 5px; margin: 15px 0; font-weight: bold; text-align: center; }
+        .stable { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
+        .unstable { background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 第7回: リアプノフ方程式</h1>
+        
+        <div class="theory-box">
+            <h2>📚 理論の概要</h2>
+            <p><strong>リアプノフ方程式</strong>は、システムの安定性を解析する強力なツールです。固有値計算を行わずに、安定性を判定できる利点があります。</p>
+            
+            <h3>リアプノフの安定性定理</h3>
+            <p>線形システム \( \dot{x} = Ax \) が漸近安定であるための必要十分条件は、任意の正定行列 \( Q > 0 \) に対して、</p>
+            <p>$$A^T P + PA = -Q$$</p>
+            <p>を満たす正定行列 \( P > 0 \) が存在することです。</p>
+            
+            <h3>リアプノフ関数</h3>
+            <p>エネルギー関数として解釈される二次形式:</p>
+            <p>$$V(x) = x^T P x$$</p>
+            <p>この関数の時間微分が負定値であれば、システムは安定です:</p>
+            <p>$$\dot{V}(x) = x^T (A^T P + PA) x = -x^T Q x < 0$$</p>
+            
+            <h3>判定手順</h3>
+            <ol>
+                <li>任意の正定行列 \( Q \) を選択（通常は単位行列 \( Q = I \)）</li>
+                <li>リアプノフ方程式 \( A^T P + PA = -Q \) を解いて \( P \) を求める</li>
+                <li>\( P \) が正定かどうかを確認（すべての固有値が正 or すべての主小行列式が正）</li>
+            </ol>
+        </div>
+
+        <div class="simulator">
+            <h2>🎮 インタラクティブシミュレーター: リアプノフ方程式求解器</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>システム選択:</label>
+                    <select id="systemType">
+                        <option value="custom">カスタム入力</option>
+                        <option value="stable2d">安定な2次系</option>
+                        <option value="unstable2d">不安定な2次系</option>
+                        <option value="marginal">限界安定系</option>
+                    </select>
+                </div>
+            </div>
+            
+            <h3>システム行列 A の入力（2×2）</h3>
+            <div class="controls">
+                <div class="control-group">
+                    <label>A[0,0]:</label>
+                    <input type="number" id="a00" value="-1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[0,1]:</label>
+                    <input type="number" id="a01" value="0" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[1,0]:</label>
+                    <input type="number" id="a10" value="0" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[1,1]:</label>
+                    <input type="number" id="a11" value="-2" step="0.1">
+                </div>
+            </div>
+            
+            <button onclick="solveLyapunov()">🧮 リアプノフ方程式を解く</button>
+            <button onclick="visualizeStability()">📊 安定性を可視化</button>
+            
+            <div id="stabilityResult"></div>
+            <div id="matrixP" class="matrix-display"></div>
+            <div id="eigenvalues" class="matrix-display"></div>
+            <div id="lyapunovPlot" class="plot-container"></div>
+            <div id="phasePlot" class="plot-container"></div>
+        </div>
+
+        <div class="example">
+            <h3>💡 実例: 2次系の安定性判定</h3>
+            <p><strong>問題</strong>: 以下のシステムの安定性を判定せよ:</p>
+            <p>$$A = \begin{bmatrix} -1 & 2 \\ -2 & -3 \end{bmatrix}$$</p>
+            <p><strong>解答</strong>:</p>
+            <p>\( Q = I \) として、リアプノフ方程式を解くと:</p>
+            <p>$$P = \begin{bmatrix} 1.5 & 0.5 \\ 0.5 & 1.0 \end{bmatrix}$$</p>
+            <p>\( P \) の固有値は 1.809, 0.691（すべて正）→ <strong>漸近安定</strong></p>
+        </div>
+
+        <div class="theory-box">
+            <h2>🎯 重要ポイント</h2>
+            <ul>
+                <li>リアプノフ方程式は固有値を直接計算せずに安定性を判定できる</li>
+                <li>\( Q \) の選択は任意だが、\( Q = I \) が一般的</li>
+                <li>\( P > 0 \) の確認には固有値法や主小行列式法を用いる</li>
+                <li>リアプノフ関数はエネルギー概念に対応している</li>
+                <li>非線形システムにも拡張可能（リアプノフの直接法）</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function getMatrixA() {
+            return [
+                [parseFloat(document.getElementById('a00').value), parseFloat(document.getElementById('a01').value)],
+                [parseFloat(document.getElementById('a10').value), parseFloat(document.getElementById('a11').value)]
+            ];
+        }
+
+        function solveLyapunov() {
+            const A = getMatrixA();
+            const Q = [[1, 0], [0, 1]]; // Q = I
+            
+            // 2×2の場合、リアプノフ方程式 A^T P + P A = -Q を直接解く
+            // P = [p11, p12; p12, p22] として連立方程式を解く
+            const a = A[0][0], b = A[0][1], c = A[1][0], d = A[1][1];
+            
+            // 係数行列を作成
+            const coeff = [
+                [2*a, b+c, 0],
+                [0, a+d, 2*b],
+                [b+c, 0, 2*d]
+            ];
+            
+            const rhs = [-Q[0][0], -Q[0][1], -Q[1][1]];
+            
+            // 簡易的なガウス消去法
+            const P_vec = solveLinear3x3(coeff, rhs);
+            
+            if (P_vec === null) {
+                document.getElementById('matrixP').innerHTML = '<p style="color: red;">リアプノフ方程式の解が見つかりませんでした</p>';
+                return;
+            }
+            
+            const P = [
+                [P_vec[0], P_vec[1]],
+                [P_vec[1], P_vec[2]]
+            ];
+            
+            // Pの固有値を計算
+            const trace = P[0][0] + P[1][1];
+            const det = P[0][0] * P[1][1] - P[0][1] * P[1][0];
+            const discriminant = trace * trace - 4 * det;
+            
+            let eigenvalues;
+            if (discriminant >= 0) {
+                eigenvalues = [
+                    (trace + Math.sqrt(discriminant)) / 2,
+                    (trace - Math.sqrt(discriminant)) / 2
+                ];
+            } else {
+                document.getElementById('eigenvalues').innerHTML = '<p>Pの固有値が複素数です（異常な状態）</p>';
+                return;
+            }
+            
+            const isStable = eigenvalues.every(ev => ev > 0);
+            
+            // 結果表示
+            let html = '<div class="stability-indicator ' + (isStable ? 'stable' : 'unstable') + '">';
+            html += isStable ? '✅ システムは漸近安定です' : '❌ システムは不安定です';
+            html += '</div>';
+            document.getElementById('stabilityResult').innerHTML = html;
+            
+            html = '<h3>解 P 行列</h3>';
+            html += `<pre>[${P[0][0].toFixed(4)}, ${P[0][1].toFixed(4)}]\n[${P[1][0].toFixed(4)}, ${P[1][1].toFixed(4)}]</pre>`;
+            document.getElementById('matrixP').innerHTML = html;
+            
+            html = '<h3>P の固有値</h3>';
+            html += `<pre>λ₁ = ${eigenvalues[0].toFixed(4)}\nλ₂ = ${eigenvalues[1].toFixed(4)}</pre>`;
+            html += '<p>' + (isStable ? 'すべての固有値が正 → P > 0' : '負の固有値が存在 → P は正定ではない') + '</p>';
+            document.getElementById('eigenvalues').innerHTML = html;
+            
+            // リアプノフ関数を可視化
+            visualizeLyapunovFunction(P, isStable);
+        }
+
+        function solveLinear3x3(A, b) {
+            // 簡易的なガウス消去法（3×3専用）
+            const n = 3;
+            let aug = A.map((row, i) => [...row, b[i]]);
+            
+            // 前進消去
+            for (let i = 0; i < n; i++) {
+                // ピボット選択
+                let maxRow = i;
+                for (let k = i + 1; k < n; k++) {
+                    if (Math.abs(aug[k][i]) > Math.abs(aug[maxRow][i])) {
+                        maxRow = k;
+                    }
+                }
+                [aug[i], aug[maxRow]] = [aug[maxRow], aug[i]];
+                
+                if (Math.abs(aug[i][i]) < 1e-10) {
+                    return null; // 特異行列
+                }
+                
+                // 消去
+                for (let k = i + 1; k < n; k++) {
+                    const factor = aug[k][i] / aug[i][i];
+                    for (let j = i; j <= n; j++) {
+                        aug[k][j] -= factor * aug[i][j];
+                    }
+                }
+            }
+            
+            // 後退代入
+            const x = Array(n).fill(0);
+            for (let i = n - 1; i >= 0; i--) {
+                x[i] = aug[i][n];
+                for (let j = i + 1; j < n; j++) {
+                    x[i] -= aug[i][j] * x[j];
+                }
+                x[i] /= aug[i][i];
+            }
+            
+            return x;
+        }
+
+        function visualizeLyapunovFunction(P, isStable) {
+            const x = [], y = [], z = [];
+            const range = 5;
+            const steps = 30;
+            
+            for (let i = 0; i <= steps; i++) {
+                const xi = -range + (2 * range * i / steps);
+                const xRow = [], yRow = [], zRow = [];
+                for (let j = 0; j <= steps; j++) {
+                    const yj = -range + (2 * range * j / steps);
+                    const V = P[0][0] * xi * xi + 2 * P[0][1] * xi * yj + P[1][1] * yj * yj;
+                    xRow.push(xi);
+                    yRow.push(yj);
+                    zRow.push(V);
+                }
+                x.push(xRow);
+                y.push(yRow);
+                z.push(zRow);
+            }
+            
+            const trace = {
+                x: x,
+                y: y,
+                z: z,
+                type: 'surface',
+                colorscale: isStable ? 'Viridis' : 'Hot',
+                name: 'V(x)'
+            };
+            
+            const layout = {
+                title: 'リアプノフ関数 V(x) = x^T P x',
+                scene: {
+                    xaxis: { title: 'x₁' },
+                    yaxis: { title: 'x₂' },
+                    zaxis: { title: 'V(x)' }
+                }
+            };
+            
+            Plotly.newPlot('lyapunovPlot', [trace], layout);
+        }
+
+        function visualizeStability() {
+            const A = getMatrixA();
+            const t = [];
+            const trajectories = [];
+            
+            // 複数の初期条件から軌道を生成
+            const initialConditions = [
+                [2, 2], [2, -2], [-2, 2], [-2, -2],
+                [3, 0], [-3, 0], [0, 3], [0, -3]
+            ];
+            
+            const dt = 0.01;
+            const tMax = 5;
+            const steps = Math.floor(tMax / dt);
+            
+            for (let t = 0; t <= tMax; t += dt) {
+                // Dummy time array
+            }
+            
+            initialConditions.forEach(x0 => {
+                let x = [...x0];
+                const xTraj = [x[0]];
+                const yTraj = [x[1]];
+                
+                for (let i = 0; i < steps; i++) {
+                    const dx = [
+                        A[0][0] * x[0] + A[0][1] * x[1],
+                        A[1][0] * x[0] + A[1][1] * x[1]
+                    ];
+                    x[0] += dx[0] * dt;
+                    x[1] += dx[1] * dt;
+                    xTraj.push(x[0]);
+                    yTraj.push(x[1]);
+                }
+                
+                trajectories.push({
+                    x: xTraj,
+                    y: yTraj,
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: { width: 2 },
+                    name: `初期値: [${x0[0]}, ${x0[1]}]`
+                });
+            });
+            
+            const layout = {
+                title: '位相平面での軌道',
+                xaxis: { title: 'x₁', zeroline: true },
+                yaxis: { title: 'x₂', zeroline: true },
+                hovermode: 'closest'
+            };
+            
+            Plotly.newPlot('phasePlot', trajectories, layout);
+        }
+
+        document.getElementById('systemType').addEventListener('change', function() {
+            const type = this.value;
+            if (type === 'stable2d') {
+                document.getElementById('a00').value = '-1';
+                document.getElementById('a01').value = '0';
+                document.getElementById('a10').value = '0';
+                document.getElementById('a11').value = '-2';
+            } else if (type === 'unstable2d') {
+                document.getElementById('a00').value = '1';
+                document.getElementById('a01').value = '0';
+                document.getElementById('a10').value = '0';
+                document.getElementById('a11').value = '2';
+            } else if (type === 'marginal') {
+                document.getElementById('a00').value = '0';
+                document.getElementById('a01').value = '1';
+                document.getElementById('a10').value = '-1';
+                document.getElementById('a11').value = '0';
+            }
+        });
+    </script>
+</body>
+</html>

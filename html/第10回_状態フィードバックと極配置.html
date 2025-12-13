@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>第10回：状態フィードバックと極配置</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        header { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: white; padding: 40px; text-align: center; }
+        h1 { font-size: 2.5em; }
+        .content { padding: 40px; }
+        h2 { color: #fcb69f; border-bottom: 3px solid #fcb69f; padding-bottom: 10px; margin: 30px 0 15px; }
+        .interactive-demo { background: #f0f8ff; border: 2px solid #4169e1; padding: 25px; margin: 25px 0; border-radius: 10px; }
+        button { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; margin: 10px 5px; }
+        input[type="number"] { padding: 8px; margin: 5px; width: 100px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { font-family: monospace; background: #263238; color: #aed581; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        canvas { border: 2px solid #ddd; border-radius: 5px; margin: 20px auto; display: block; background: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>🎯 第10回：極配置</h1></header>
+        <div class="content">
+            <h2>極配置シミュレーター</h2>
+            <div class="interactive-demo">
+                <h3>希望する極を指定</h3>
+                <p>2次システムの極を配置します</p>
+                <div>
+                    <label>極1（実部）:</label><input type="number" id="pole1-real" value="-2" step="0.1">
+                    <label>極1（虚部）:</label><input type="number" id="pole1-imag" value="2" step="0.1"><br>
+                    <label>極2（実部）:</label><input type="number" id="pole2-real" value="-2" step="0.1">
+                    <label>極2（虚部）:</label><input type="number" id="pole2-imag" value="-2" step="0.1">
+                </div>
+                <button onclick="calculateGain()">フィードバックゲインを計算</button>
+                <div class="result" id="gain-result"></div>
+                <canvas id="pole-response" width="700" height="350"></canvas>
+            </div>
+        </div>
+    </div>
+    <script>
+        function calculateGain() {
+            const p1r = parseFloat(document.getElementById('pole1-real').value);
+            const p1i = parseFloat(document.getElementById('pole1-imag').value);
+            const p2r = parseFloat(document.getElementById('pole2-real').value);
+            const p2i = parseFloat(document.getElementById('pole2-imag').value);
+            
+            // 簡易計算（例：A=[0 1; -2 -3], B=[0; 1]）
+            const a0_desired = p1r * p2r - p1i * p2i;
+            const a1_desired = -(p1r + p2r);
+            
+            const k1 = -(a0_desired + 2);
+            const k2 = -(a1_desired + 3);
+            
+            let result = `希望する極:\nλ₁ = ${p1r} + ${p1i}j\nλ₂ = ${p2r} + ${p2i}j\n\n`;
+            result += `フィードバックゲイン K:\nK = [${k1.toFixed(4)}  ${k2.toFixed(4)}]\n\n`;
+            result += `制御則: u = -Kx`;
+            
+            document.getElementById('gain-result').textContent = result;
+            drawResponse(p1r, p1i);
+        }
+        
+        function drawResponse(real, imag) {
+            const canvas = document.getElementById('pole-response');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = '#ccc';
+            ctx.beginPath();
+            ctx.moveTo(50, canvas.height - 50);
+            ctx.lineTo(canvas.width - 20, canvas.height - 50);
+            ctx.stroke();
+            
+            const tMax = 5;
+            const dt = 0.01;
+            const scaleX = (canvas.width - 70) / tMax;
+            const scaleY = 100;
+            
+            ctx.strokeStyle = '#fcb69f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < tMax / dt; i++) {
+                const t = i * dt;
+                const omega = Math.abs(imag);
+                const y = 1 - Math.exp(real * t) * (Math.cos(omega * t) + Math.abs(real) / omega * Math.sin(omega * t));
+                const x = 50 + t * scaleX;
+                const py = canvas.height - 50 - y * scaleY;
+                if (i === 0) ctx.moveTo(x, py);
+                else ctx.lineTo(x, py);
+            }
+            ctx.stroke();
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.fillText('時間', canvas.width - 50, canvas.height - 30);
+        }
+        
+        calculateGain();
+    </script>
+</body>
+</html>

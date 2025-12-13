@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>第12回：最適レギュレータ</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        header { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white; padding: 40px; text-align: center; }
+        h1 { font-size: 2.5em; }
+        .content { padding: 40px; }
+        h2 { color: #ff9a9e; border-bottom: 3px solid #ff9a9e; padding-bottom: 10px; margin: 30px 0 15px; }
+        .interactive-demo { background: #f0f8ff; border: 2px solid #4169e1; padding: 25px; margin: 25px 0; border-radius: 10px; }
+        button { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; margin: 10px 5px; }
+        input[type="range"] { width: 100%; margin: 10px 0; }
+        .result { font-family: monospace; background: #263238; color: #aed581; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        canvas { border: 2px solid #ddd; border-radius: 5px; margin: 20px auto; display: block; background: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>⚡ 第12回：最適レギュレータ (LQR)</h1></header>
+        <div class="content">
+            <h2>LQR重み行列の影響</h2>
+            <div class="interactive-demo">
+                <h3>重み行列を調整</h3>
+                <div>
+                    <label>Q重み（状態ペナルティ）: <span id="q-value">1.0</span></label>
+                    <input type="range" id="q-slider" min="0.1" max="10" step="0.1" value="1">
+                </div>
+                <div>
+                    <label>R重み（入力ペナルティ）: <span id="r-value">1.0</span></label>
+                    <input type="range" id="r-slider" min="0.1" max="10" step="0.1" value="1">
+                </div>
+                <button onclick="computeLQR()">LQRを計算</button>
+                <div class="result" id="lqr-result"></div>
+                <canvas id="lqr-response" width="700" height="350"></canvas>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('q-slider').addEventListener('input', function() {
+            document.getElementById('q-value').textContent = this.value;
+        });
+        document.getElementById('r-slider').addEventListener('input', function() {
+            document.getElementById('r-value').textContent = this.value;
+        });
+        
+        function computeLQR() {
+            const q = parseFloat(document.getElementById('q-slider').value);
+            const r = parseFloat(document.getElementById('r-slider').value);
+            
+            // 簡易LQR計算（近似）
+            const ratio = q / r;
+            const k1 = Math.sqrt(ratio + 2);
+            const k2 = k1 * 0.8;
+            
+            let result = `重み行列:\nQ = ${q}, R = ${r}\n\n`;
+            result += `LQRゲイン K:\nK ≈ [${k1.toFixed(4)}  ${k2.toFixed(4)}]\n\n`;
+            result += `Q/R比が大きい → 状態収束重視\nQ/R比が小さい → 入力抑制重視`;
+            
+            document.getElementById('lqr-result').textContent = result;
+            drawLQRResponse(k1, k2);
+        }
+        
+        function drawLQRResponse(k1, k2) {
+            const canvas = document.getElementById('lqr-response');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = '#ccc';
+            ctx.beginPath();
+            ctx.moveTo(50, canvas.height - 50);
+            ctx.lineTo(canvas.width - 20, canvas.height - 50);
+            ctx.stroke();
+            
+            const tMax = 5;
+            const dt = 0.01;
+            const scaleX = (canvas.width - 70) / tMax;
+            const scaleY = 100;
+            
+            let x1 = 1, x2 = 0;
+            
+            ctx.strokeStyle = '#ff9a9e';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < tMax / dt; i++) {
+                const t = i * dt;
+                const x = 50 + t * scaleX;
+                const y = canvas.height - 50 - x1 * scaleY;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                
+                const u = -k1 * x1 - k2 * x2;
+                const dx1 = x2;
+                const dx2 = -2 * x1 - 3 * x2 + u;
+                x1 += dx1 * dt;
+                x2 += dx2 * dt;
+            }
+            ctx.stroke();
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.fillText('時間', canvas.width - 50, canvas.height - 30);
+        }
+        
+        computeLQR();
+    </script>
+</body>
+</html>

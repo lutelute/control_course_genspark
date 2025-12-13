@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第9回: 可観測性</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #9b59b6; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .theory-box { background: #f4ecf7; padding: 20px; border-left: 4px solid #9b59b6; margin: 20px 0; border-radius: 5px; }
+        .simulator { background: #f9f9f9; padding: 25px; border-radius: 8px; margin: 25px 0; border: 2px solid #ddd; }
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0; }
+        .control-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; color: #555; margin-bottom: 5px; }
+        input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        button { background: #9b59b6; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        button:hover { background: #8e44ad; }
+        .plot-container { margin: 20px 0; }
+        .matrix-display { background: white; padding: 15px; border-radius: 5px; font-family: monospace; margin: 10px 0; border: 1px solid #ddd; white-space: pre-wrap; }
+        .example { background: #e8f8f5; padding: 15px; border-left: 4px solid #1abc9c; margin: 20px 0; border-radius: 5px; }
+        .result-box { padding: 15px; border-radius: 5px; margin: 15px 0; font-weight: bold; text-align: center; }
+        .observable { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
+        .not-observable { background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 第9回: 可観測性</h1>
+        
+        <div class="theory-box">
+            <h2>📚 理論の概要</h2>
+            <p><strong>可観測性（Observability）</strong>は、システムの内部状態を出力測定から推定できるかどうかを判定する概念です。可制御性と双対の関係にあります。</p>
+            
+            <h3>可観測性の定義</h3>
+            <p>システム \( \dot{x} = Ax + Bu, \; y = Cx + Du \) において、有限時間内の出力 \( y(t) \) および入力 \( u(t) \) の情報から初期状態 \( x(0) \) を一意に決定できるとき、システムは<strong>可観測</strong>であるという。</p>
+            
+            <h3>可観測性行列</h3>
+            <p>n次元システムの可観測性行列 \( \mathcal{O} \) は:</p>
+            <p>$$\mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ \vdots \\ CA^{n-1} \end{bmatrix}$$</p>
+            
+            <h3>可観測性判定条件</h3>
+            <p>システムが可観測である ⟺ \( \text{rank}(\mathcal{O}) = n \)</p>
+            
+            <h3>物理的解釈</h3>
+            <ul>
+                <li><strong>可観測</strong>: すべての状態変数がセンサー出力に影響を与える</li>
+                <li><strong>不可観測</strong>: 一部の状態が「隠れて」おり、測定できない</li>
+            </ul>
+            
+            <h3>可制御性との双対性</h3>
+            <p>システム \( (A, B, C) \) が可観測 ⟺ システム \( (A^T, C^T, B^T) \) が可制御</p>
+        </div>
+
+        <div class="simulator">
+            <h2>🎮 インタラクティブシミュレーター: 可観測性判定</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>システム選択:</label>
+                    <select id="systemType">
+                        <option value="custom">カスタム入力</option>
+                        <option value="observable">可観測な2次系</option>
+                        <option value="unobservable">不可観測な2次系</option>
+                        <option value="partial">部分的に可観測な系</option>
+                    </select>
+                </div>
+            </div>
+            
+            <h3>システム行列 A と C の入力（2×2 システム）</h3>
+            <div class="controls">
+                <div class="control-group">
+                    <label>A[0,0]:</label>
+                    <input type="number" id="a00" value="-1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[0,1]:</label>
+                    <input type="number" id="a01" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[1,0]:</label>
+                    <input type="number" id="a10" value="0" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[1,1]:</label>
+                    <input type="number" id="a11" value="-2" step="0.1">
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>C[0]:</label>
+                    <input type="number" id="c0" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>C[1]:</label>
+                    <input type="number" id="c1" value="0" step="0.1">
+                </div>
+            </div>
+            
+            <button onclick="checkObservability()">🔍 可観測性を判定</button>
+            <button onclick="simulateStateEstimation()">📈 状態推定をシミュレート</button>
+            
+            <div id="observabilityResult"></div>
+            <div id="obsMatrix" class="matrix-display"></div>
+            <div id="rankInfo" class="matrix-display"></div>
+            <div id="estimationPlot" class="plot-container"></div>
+        </div>
+
+        <div class="example">
+            <h3>💡 実例: 位置のみ測定可能な質点系</h3>
+            <p><strong>問題</strong>: 質点の運動方程式 \( m\ddot{x} = u \) において、位置 \( x \) のみが測定できる場合、システムは可観測か?</p>
+            <p><strong>解答</strong>:</p>
+            <p>状態変数 \( [x, \dot{x}]^T \) として状態方程式:</p>
+            <p>$$\begin{bmatrix} \dot{x} \\ \ddot{x} \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix} \begin{bmatrix} x \\ \dot{x} \end{bmatrix} + \begin{bmatrix} 0 \\ 1/m \end{bmatrix} u, \quad y = \begin{bmatrix} 1 & 0 \end{bmatrix} \begin{bmatrix} x \\ \dot{x} \end{bmatrix}$$</p>
+            <p>可観測性行列:</p>
+            <p>$$\mathcal{O} = \begin{bmatrix} C \\ CA \end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}$$</p>
+            <p>\( \text{rank}(\mathcal{O}) = 2 = n \) → <strong>可観測</strong></p>
+            <p>位置の時間変化から速度を推定できる！</p>
+        </div>
+
+        <div class="theory-box">
+            <h2>🎯 重要ポイント</h2>
+            <ul>
+                <li>可観測性は状態推定（オブザーバ設計）の前提条件</li>
+                <li>不可観測な状態は推定不可能（センサー追加が必要）</li>
+                <li>可制御性と可観測性は独立な性質（両方満たすとは限らない）</li>
+                <li>線形システムでは代数的条件で判定可能</li>
+                <li>実際のシステムでは測定ノイズや数値誤差も考慮が必要</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function getSystem() {
+            const A = [
+                [parseFloat(document.getElementById('a00').value), parseFloat(document.getElementById('a01').value)],
+                [parseFloat(document.getElementById('a10').value), parseFloat(document.getElementById('a11').value)]
+            ];
+            const C = [parseFloat(document.getElementById('c0').value), parseFloat(document.getElementById('c1').value)];
+            return { A, C };
+        }
+
+        function checkObservability() {
+            const { A, C } = getSystem();
+            
+            // 可観測性行列 O = [C; CA]
+            const CA = [
+                C[0] * A[0][0] + C[1] * A[1][0],
+                C[0] * A[0][1] + C[1] * A[1][1]
+            ];
+            
+            const O = [C, CA];
+            
+            // ランク計算（2×2の場合）
+            const det = O[0][0] * O[1][1] - O[0][1] * O[1][0];
+            const rank = Math.abs(det) > 1e-10 ? 2 : (Math.abs(O[0][0]) > 1e-10 || Math.abs(O[0][1]) > 1e-10 || Math.abs(O[1][0]) > 1e-10 || Math.abs(O[1][1]) > 1e-10 ? 1 : 0);
+            
+            const isObservable = (rank === 2);
+            
+            // 結果表示
+            let html = '<div class="result-box ' + (isObservable ? 'observable' : 'not-observable') + '">';
+            html += isObservable ? '✅ システムは可観測です' : '❌ システムは不可観測です';
+            html += '</div>';
+            document.getElementById('observabilityResult').innerHTML = html;
+            
+            html = '<h3>可観測性行列 O</h3>';
+            html += `<pre>[${O[0][0].toFixed(4)}, ${O[0][1].toFixed(4)}]  ← C\n[${O[1][0].toFixed(4)}, ${O[1][1].toFixed(4)}]  ← CA</pre>`;
+            document.getElementById('obsMatrix').innerHTML = html;
+            
+            html = '<h3>ランク情報</h3>';
+            html += `<pre>rank(O) = ${rank}\n`;
+            html += `行列式 = ${det.toFixed(6)}\n`;
+            html += `システム次元 n = 2\n\n`;
+            html += isObservable ? '可観測条件 rank(O) = n を満たす' : '可観測条件 rank(O) = n を満たさない';
+            html += '</pre>';
+            document.getElementById('rankInfo').innerHTML = html;
+        }
+
+        function simulateStateEstimation() {
+            const { A, C } = getSystem();
+            
+            // 真の状態の時間発展をシミュレート
+            const dt = 0.01;
+            const tMax = 5;
+            const steps = Math.floor(tMax / dt);
+            
+            let x_true = [2, 1]; // 真の初期状態
+            let x_obs = [0, 0];   // 観測から推定される状態（簡易的なオブザーバ）
+            
+            const t = [];
+            const x1_true = [x_true[0]];
+            const x2_true = [x_true[1]];
+            const x1_obs = [x_obs[0]];
+            const x2_obs = [x_obs[1]];
+            const y_measured = [C[0] * x_true[0] + C[1] * x_true[1]];
+            
+            // 簡易的なオブザーバゲイン（実際はルーエンバーガーオブザーバ等を使用）
+            const L = [2, 1.5];
+            
+            for (let i = 0; i < steps; i++) {
+                t.push(i * dt);
+                
+                // 真の状態の更新
+                const dx_true = [
+                    A[0][0] * x_true[0] + A[0][1] * x_true[1],
+                    A[1][0] * x_true[0] + A[1][1] * x_true[1]
+                ];
+                x_true[0] += dx_true[0] * dt;
+                x_true[1] += dx_true[1] * dt;
+                
+                // 測定値
+                const y = C[0] * x_true[0] + C[1] * x_true[1];
+                
+                // 推定値の更新（簡易オブザーバ）
+                const y_est = C[0] * x_obs[0] + C[1] * x_obs[1];
+                const error = y - y_est;
+                
+                const dx_obs = [
+                    A[0][0] * x_obs[0] + A[0][1] * x_obs[1] + L[0] * error,
+                    A[1][0] * x_obs[0] + A[1][1] * x_obs[1] + L[1] * error
+                ];
+                x_obs[0] += dx_obs[0] * dt;
+                x_obs[1] += dx_obs[1] * dt;
+                
+                x1_true.push(x_true[0]);
+                x2_true.push(x_true[1]);
+                x1_obs.push(x_obs[0]);
+                x2_obs.push(x_obs[1]);
+                y_measured.push(y);
+            }
+            
+            const traces = [
+                {
+                    x: t,
+                    y: x1_true,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '真の状態 x₁',
+                    line: { color: '#3498db', width: 2 }
+                },
+                {
+                    x: t,
+                    y: x1_obs,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '推定状態 x₁',
+                    line: { color: '#e74c3c', width: 2, dash: 'dash' }
+                },
+                {
+                    x: t,
+                    y: x2_true,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '真の状態 x₂',
+                    line: { color: '#2ecc71', width: 2 }
+                },
+                {
+                    x: t,
+                    y: x2_obs,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '推定状態 x₂',
+                    line: { color: '#f39c12', width: 2, dash: 'dash' }
+                }
+            ];
+            
+            const layout = {
+                title: '状態推定シミュレーション（簡易オブザーバ）',
+                xaxis: { title: '時間 [s]' },
+                yaxis: { title: '状態' },
+                hovermode: 'x'
+            };
+            
+            Plotly.newPlot('estimationPlot', traces, layout);
+        }
+
+        document.getElementById('systemType').addEventListener('change', function() {
+            const type = this.value;
+            if (type === 'observable') {
+                document.getElementById('a00').value = '-1';
+                document.getElementById('a01').value = '1';
+                document.getElementById('a10').value = '0';
+                document.getElementById('a11').value = '-2';
+                document.getElementById('c0').value = '1';
+                document.getElementById('c1').value = '0';
+            } else if (type === 'unobservable') {
+                document.getElementById('a00').value = '-1';
+                document.getElementById('a01').value = '1';
+                document.getElementById('a10').value = '0';
+                document.getElementById('a11').value = '-2';
+                document.getElementById('c0').value = '0';
+                document.getElementById('c1').value = '1';
+            } else if (type === 'partial') {
+                document.getElementById('a00').value = '-1';
+                document.getElementById('a01').value = '0';
+                document.getElementById('a10').value = '0';
+                document.getElementById('a11').value = '-2';
+                document.getElementById('c0').value = '1';
+                document.getElementById('c1').value = '1';
+            }
+        });
+    </script>
+</body>
+</html>

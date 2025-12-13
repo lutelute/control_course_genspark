@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第5回: 伝達関数と状態空間表現</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .theory-box { background: #e8f4f8; padding: 20px; border-left: 4px solid #3498db; margin: 20px 0; border-radius: 5px; }
+        .simulator { background: #f9f9f9; padding: 25px; border-radius: 8px; margin: 25px 0; border: 2px solid #ddd; }
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0; }
+        .control-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; color: #555; margin-bottom: 5px; }
+        input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        button { background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        button:hover { background: #2980b9; }
+        .plot-container { margin: 20px 0; }
+        .matrix-display { background: white; padding: 15px; border-radius: 5px; font-family: monospace; margin: 10px 0; border: 1px solid #ddd; }
+        .example { background: #fff9e6; padding: 15px; border-left: 4px solid #f39c12; margin: 20px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 第5回: 伝達関数と状態空間表現</h1>
+        
+        <div class="theory-box">
+            <h2>📚 理論の概要</h2>
+            <p><strong>伝達関数</strong>は古典制御理論の基本ツールであり、<strong>状態空間表現</strong>は現代制御理論の基礎です。この2つの表現方法は相互に変換可能であり、それぞれ異なる利点があります。</p>
+            
+            <h3>伝達関数 (Transfer Function)</h3>
+            <p>ラプラス変換を用いた入出力関係:</p>
+            <p>$$G(s) = \frac{Y(s)}{U(s)} = \frac{b_m s^m + b_{m-1} s^{m-1} + \cdots + b_1 s + b_0}{s^n + a_{n-1} s^{n-1} + \cdots + a_1 s + a_0}$$</p>
+            
+            <h3>状態空間表現 (State-Space Representation)</h3>
+            <p>$$\dot{x} = Ax + Bu$$</p>
+            <p>$$y = Cx + Du$$</p>
+            
+            <h3>可制御正準形式 (Controllable Canonical Form)</h3>
+            <p>伝達関数から状態空間表現への標準的な変換形式:</p>
+            <p>$$A = \begin{bmatrix} 0 & 1 & 0 & \cdots & 0 \\ 0 & 0 & 1 & \cdots & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & 0 & \cdots & 1 \\ -a_0 & -a_1 & -a_2 & \cdots & -a_{n-1} \end{bmatrix}, \quad B = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \\ 1 \end{bmatrix}, \quad C = \begin{bmatrix} b_0 & b_1 & \cdots & b_{n-1} \end{bmatrix}$$</p>
+        </div>
+
+        <div class="simulator">
+            <h2>🎮 インタラクティブシミュレーター: 伝達関数 ⇔ 状態空間変換</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>システム選択:</label>
+                    <select id="systemType">
+                        <option value="custom">カスタム入力</option>
+                        <option value="first">1次系: 1/(s+2)</option>
+                        <option value="second">2次系: 4/(s²+2s+4)</option>
+                        <option value="third">3次系: 6/(s³+6s²+11s+6)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <h3>伝達関数の係数入力</h3>
+            <div class="controls">
+                <div class="control-group">
+                    <label>分子係数 [b₀, b₁, ...]:</label>
+                    <input type="text" id="numCoeffs" value="4" placeholder="例: 1, 2, 3">
+                </div>
+                <div class="control-group">
+                    <label>分母係数 [a₀, a₁, ..., aₙ]:</label>
+                    <input type="text" id="denCoeffs" value="4, 2, 1" placeholder="例: 1, 2, 3, 1">
+                </div>
+            </div>
+            
+            <button onclick="convertToStateSpace()">🔄 状態空間表現に変換</button>
+            <button onclick="computeResponse()">📈 ステップ応答を計算</button>
+            
+            <div id="matrices" class="matrix-display"></div>
+            <div id="poles" class="matrix-display"></div>
+            <div id="stepPlot" class="plot-container"></div>
+            <div id="polePlot" class="plot-container"></div>
+        </div>
+
+        <div class="example">
+            <h3>💡 実例: RC回路の解析</h3>
+            <p><strong>問題</strong>: RC回路の伝達関数 \( G(s) = \frac{1}{RCs + 1} \) を状態空間表現に変換せよ。</p>
+            <p><strong>解答</strong>:</p>
+            <p>R = 1kΩ, C = 1μF の場合、時定数 τ = RC = 0.001s</p>
+            <p>伝達関数: \( G(s) = \frac{1000}{s + 1000} \)</p>
+            <p>状態空間表現:</p>
+            <p>$$\dot{x} = -1000x + 1000u$$</p>
+            <p>$$y = x$$</p>
+        </div>
+
+        <div class="theory-box">
+            <h2>🎯 重要ポイント</h2>
+            <ul>
+                <li>伝達関数は周波数応答解析に便利</li>
+                <li>状態空間表現は多変数系や非線形系に拡張可能</li>
+                <li>可制御正準形式は制御器設計に有用</li>
+                <li>極の位置は両表現で同一（システムの固有特性）</li>
+                <li>状態変数の取り方は一意ではない（相似変換の自由度）</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function parseCoeffs(str) {
+            return str.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+        }
+
+        function convertToStateSpace() {
+            const num = parseCoeffs(document.getElementById('numCoeffs').value);
+            const den = parseCoeffs(document.getElementById('denCoeffs').value);
+            
+            if (num.length === 0 || den.length === 0) {
+                alert('係数を正しく入力してください');
+                return;
+            }
+            
+            const n = den.length;
+            
+            // 可制御正準形式のA行列
+            let A = Array(n).fill(0).map(() => Array(n).fill(0));
+            for (let i = 0; i < n - 1; i++) {
+                A[i][i + 1] = 1;
+            }
+            for (let i = 0; i < n; i++) {
+                A[n - 1][i] = -den[i];
+            }
+            
+            // B行列
+            let B = Array(n).fill(0);
+            B[n - 1] = 1;
+            
+            // C行列
+            let C = Array(n).fill(0);
+            for (let i = 0; i < Math.min(num.length, n); i++) {
+                C[i] = num[i];
+            }
+            
+            // D行列
+            let D = 0;
+            
+            displayMatrices(A, B, C, D);
+            computePoles(A);
+        }
+
+        function displayMatrices(A, B, C, D) {
+            const n = A.length;
+            let html = '<h3>状態空間表現</h3>';
+            
+            html += '<p><strong>A行列:</strong></p><pre>';
+            for (let i = 0; i < n; i++) {
+                html += '[' + A[i].map(v => v.toFixed(3).padStart(8)).join(', ') + ']\n';
+            }
+            html += '</pre>';
+            
+            html += '<p><strong>B行列:</strong></p><pre>[' + B.map(v => v.toFixed(3)).join(', ') + ']ᵀ</pre>';
+            html += '<p><strong>C行列:</strong></p><pre>[' + C.map(v => v.toFixed(3)).join(', ') + ']</pre>';
+            html += '<p><strong>D行列:</strong></p><pre>' + D + '</pre>';
+            
+            document.getElementById('matrices').innerHTML = html;
+        }
+
+        function computePoles(A) {
+            // 簡易的な固有値計算（2x2まで対応）
+            const n = A.length;
+            let poles = [];
+            
+            if (n === 1) {
+                poles = [{ real: A[0][0], imag: 0 }];
+            } else if (n === 2) {
+                const trace = A[0][0] + A[1][1];
+                const det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+                const discriminant = trace * trace - 4 * det;
+                
+                if (discriminant >= 0) {
+                    poles = [
+                        { real: (trace + Math.sqrt(discriminant)) / 2, imag: 0 },
+                        { real: (trace - Math.sqrt(discriminant)) / 2, imag: 0 }
+                    ];
+                } else {
+                    const realPart = trace / 2;
+                    const imagPart = Math.sqrt(-discriminant) / 2;
+                    poles = [
+                        { real: realPart, imag: imagPart },
+                        { real: realPart, imag: -imagPart }
+                    ];
+                }
+            } else {
+                document.getElementById('poles').innerHTML = '<p>3次以上のシステムの極計算は数値解析が必要です</p>';
+                return;
+            }
+            
+            let html = '<h3>システムの極（固有値）</h3>';
+            poles.forEach((p, i) => {
+                if (Math.abs(p.imag) < 1e-10) {
+                    html += `<p>極${i + 1}: ${p.real.toFixed(4)}</p>`;
+                } else {
+                    html += `<p>極${i + 1}: ${p.real.toFixed(4)} ${p.imag >= 0 ? '+' : ''}${p.imag.toFixed(4)}j</p>`;
+                }
+            });
+            
+            document.getElementById('poles').innerHTML = html;
+            plotPoles(poles);
+        }
+
+        function plotPoles(poles) {
+            const realParts = poles.map(p => p.real);
+            const imagParts = poles.map(p => p.imag);
+            
+            const trace = {
+                x: realParts,
+                y: imagParts,
+                mode: 'markers',
+                type: 'scatter',
+                marker: { size: 12, color: 'red', symbol: 'x' },
+                name: '極'
+            };
+            
+            const layout = {
+                title: 'システムの極の配置',
+                xaxis: { title: '実部', zeroline: true, zerolinecolor: '#888' },
+                yaxis: { title: '虚部', zeroline: true, zerolinecolor: '#888' },
+                hovermode: 'closest'
+            };
+            
+            Plotly.newPlot('polePlot', [trace], layout);
+        }
+
+        function computeResponse() {
+            // 簡易的なステップ応答シミュレーション
+            const num = parseCoeffs(document.getElementById('numCoeffs').value);
+            const den = parseCoeffs(document.getElementById('denCoeffs').value);
+            
+            const dt = 0.01;
+            const tMax = 10;
+            const steps = Math.floor(tMax / dt);
+            
+            let t = [];
+            let y = [];
+            
+            // 簡易的な数値積分（1次、2次系のみ対応）
+            if (den.length === 2) {
+                // 1次系: K/(τs + 1)
+                const K = num[0] / den[0];
+                const tau = 1 / den[1];
+                
+                for (let i = 0; i <= steps; i++) {
+                    const time = i * dt;
+                    t.push(time);
+                    y.push(K * (1 - Math.exp(-time / tau)));
+                }
+            } else if (den.length === 3) {
+                // 2次系
+                const K = num[0] / den[0];
+                const wn = Math.sqrt(den[0]);
+                const zeta = den[1] / (2 * wn);
+                
+                if (zeta < 1) {
+                    const wd = wn * Math.sqrt(1 - zeta * zeta);
+                    for (let i = 0; i <= steps; i++) {
+                        const time = i * dt;
+                        t.push(time);
+                        const envelope = Math.exp(-zeta * wn * time);
+                        y.push(K * (1 - envelope * (Math.cos(wd * time) + (zeta / Math.sqrt(1 - zeta * zeta)) * Math.sin(wd * time))));
+                    }
+                } else {
+                    for (let i = 0; i <= steps; i++) {
+                        const time = i * dt;
+                        t.push(time);
+                        y.push(K * (1 - Math.exp(-wn * time) * (1 + wn * time)));
+                    }
+                }
+            } else {
+                alert('このシミュレーターは1次および2次系のみサポートしています');
+                return;
+            }
+            
+            const trace = {
+                x: t,
+                y: y,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'ステップ応答',
+                line: { color: '#3498db', width: 2 }
+            };
+            
+            const layout = {
+                title: 'ステップ応答',
+                xaxis: { title: '時間 [s]' },
+                yaxis: { title: '出力' },
+                hovermode: 'x'
+            };
+            
+            Plotly.newPlot('stepPlot', [trace], layout);
+        }
+
+        document.getElementById('systemType').addEventListener('change', function() {
+            const type = this.value;
+            if (type === 'first') {
+                document.getElementById('numCoeffs').value = '1';
+                document.getElementById('denCoeffs').value = '1, 2';
+            } else if (type === 'second') {
+                document.getElementById('numCoeffs').value = '4';
+                document.getElementById('denCoeffs').value = '4, 2, 1';
+            } else if (type === 'third') {
+                document.getElementById('numCoeffs').value = '6';
+                document.getElementById('denCoeffs').value = '6, 11, 6, 1';
+            }
+        });
+    </script>
+</body>
+</html>

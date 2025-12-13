@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第3回：状態方程式の解</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { font-size: 1.2em; opacity: 0.9; }
+        .content { padding: 40px; }
+        h2 {
+            color: #43e97b;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #43e97b;
+        }
+        h3 { color: #38f9d7; margin-top: 25px; margin-bottom: 10px; }
+        .highlight-box {
+            background: #e8f5e9;
+            border-left: 5px solid #43e97b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .interactive-demo {
+            background: #f0f8ff;
+            border: 2px solid #4169e1;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 233, 123, 0.4);
+        }
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            display: block;
+            margin: 20px auto;
+            background: white;
+        }
+        .formula {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background: #43e97b;
+            color: white;
+        }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .slider-container { margin: 15px 0; }
+        input[type="range"] { width: 100%; margin: 10px 0; }
+        .value-display {
+            font-family: 'Courier New', monospace;
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        ul { margin-left: 30px; margin-top: 10px; }
+        li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📐 第3回：状態方程式の解</h1>
+            <p class="subtitle">Solution of State Equations</p>
+        </header>
+        
+        <div class="content">
+            <div class="highlight-box">
+                <h3>🎯 学習目標</h3>
+                <ul>
+                    <li>線形時不変システムの状態方程式の解法を理解する</li>
+                    <li>状態遷移行列の概念と意味を把握する</li>
+                    <li>初期値応答と強制応答の関係を学ぶ</li>
+                </ul>
+            </div>
+
+            <h2>1. 状態方程式の一般解</h2>
+            
+            <div class="formula">
+                <h3>線形時不変システムの解</h3>
+                <p>$$\mathbf{x}(t) = e^{\mathbf{A}t}\mathbf{x}_0 + \int_0^t e^{\mathbf{A}(t-\tau)}\mathbf{B}\mathbf{u}(\tau)d\tau$$</p>
+                <p style="margin-top: 15px;">
+                    <strong>第1項：</strong>初期値応答（自由応答）<br>
+                    <strong>第2項：</strong>強制応答（入力応答）
+                </p>
+            </div>
+
+            <h2>2. インタラクティブデモ：状態遷移行列の可視化</h2>
+            
+            <div class="interactive-demo">
+                <h3>🔧 システム行列のパラメータ</h3>
+                
+                <p>2×2システム: \(\mathbf{A} = \begin{bmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{bmatrix}\)</p>
+                
+                <div class="slider-container">
+                    <label>a₁₁: <span id="a11-value">-1.0</span></label>
+                    <input type="range" id="a11-slider" min="-3" max="1" step="0.1" value="-1">
+                </div>
+                
+                <div class="slider-container">
+                    <label>a₁₂: <span id="a12-value">1.0</span></label>
+                    <input type="range" id="a12-slider" min="-2" max="2" step="0.1" value="1">
+                </div>
+                
+                <div class="slider-container">
+                    <label>a₂₁: <span id="a21-value">0.0</span></label>
+                    <input type="range" id="a21-slider" min="-2" max="2" step="0.1" value="0">
+                </div>
+                
+                <div class="slider-container">
+                    <label>a₂₂: <span id="a22-value">-2.0</span></label>
+                    <input type="range" id="a22-slider" min="-3" max="1" step="0.1" value="-2">
+                </div>
+
+                <div class="slider-container">
+                    <label>初期状態 x₁(0): <span id="x1-value">1.0</span></label>
+                    <input type="range" id="x1-slider" min="-2" max="2" step="0.1" value="1">
+                </div>
+
+                <div class="slider-container">
+                    <label>初期状態 x₂(0): <span id="x2-value">1.0</span></label>
+                    <input type="range" id="x2-slider" min="-2" max="2" step="0.1" value="1">
+                </div>
+                
+                <button onclick="simulateResponse()">シミュレーション実行</button>
+                <button onclick="resetDemo()">リセット</button>
+                
+                <div class="value-display">
+                    <h4>固有値:</h4>
+                    <pre id="eigenvalues"></pre>
+                </div>
+                
+                <canvas id="response-canvas" width="800" height="400"></canvas>
+            </div>
+
+            <h2>3. 行列指数関数の性質</h2>
+            
+            <table>
+                <tr>
+                    <th>性質</th>
+                    <th>式</th>
+                </tr>
+                <tr>
+                    <td>初期条件</td>
+                    <td>\(e^{\mathbf{A} \cdot 0} = \mathbf{I}\)</td>
+                </tr>
+                <tr>
+                    <td>微分</td>
+                    <td>\(\frac{d}{dt}e^{\mathbf{A}t} = \mathbf{A}e^{\mathbf{A}t}\)</td>
+                </tr>
+                <tr>
+                    <td>加法性</td>
+                    <td>\(e^{\mathbf{A}(t_1+t_2)} = e^{\mathbf{A}t_1}e^{\mathbf{A}t_2}\)</td>
+                </tr>
+                <tr>
+                    <td>逆行列</td>
+                    <td>\((e^{\mathbf{A}t})^{-1} = e^{-\mathbf{A}t}\)</td>
+                </tr>
+            </table>
+
+            <h2>4. まとめ</h2>
+            <div class="highlight-box">
+                <ul>
+                    <li>状態方程式の解は初期値応答と強制応答の和</li>
+                    <li>状態遷移行列 \(e^{\mathbf{A}t}\) が時間発展を記述</li>
+                    <li>固有値が負なら状態は減衰、正なら発散</li>
+                    <li>行列指数関数の計算には複数の方法がある</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // スライダーの値を更新
+        ['a11', 'a12', 'a21', 'a22', 'x1', 'x2'].forEach(id => {
+            document.getElementById(id + '-slider').addEventListener('input', function() {
+                document.getElementById(id + '-value').textContent = this.value;
+            });
+        });
+
+        function simulateResponse() {
+            const a11 = parseFloat(document.getElementById('a11-slider').value);
+            const a12 = parseFloat(document.getElementById('a12-slider').value);
+            const a21 = parseFloat(document.getElementById('a21-slider').value);
+            const a22 = parseFloat(document.getElementById('a22-slider').value);
+            const x1_0 = parseFloat(document.getElementById('x1-slider').value);
+            const x2_0 = parseFloat(document.getElementById('x2-slider').value);
+            
+            // 固有値計算
+            const trace = a11 + a22;
+            const det = a11 * a22 - a12 * a21;
+            const discriminant = trace * trace - 4 * det;
+            
+            let eigentext = '';
+            if (discriminant >= 0) {
+                const lambda1 = (trace + Math.sqrt(discriminant)) / 2;
+                const lambda2 = (trace - Math.sqrt(discriminant)) / 2;
+                eigentext = `λ₁ = ${lambda1.toFixed(3)}\nλ₂ = ${lambda2.toFixed(3)}`;
+            } else {
+                const real = trace / 2;
+                const imag = Math.sqrt(-discriminant) / 2;
+                eigentext = `λ₁ = ${real.toFixed(3)} + ${imag.toFixed(3)}j\nλ₂ = ${real.toFixed(3)} - ${imag.toFixed(3)}j`;
+            }
+            document.getElementById('eigenvalues').textContent = eigentext;
+            
+            // キャンバス描画
+            const canvas = document.getElementById('response-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 軸の描画
+            drawAxes(ctx, canvas.width, canvas.height);
+            
+            // シミュレーション
+            const dt = 0.01;
+            const tMax = 5;
+            const steps = tMax / dt;
+            
+            let x1 = x1_0;
+            let x2 = x2_0;
+            
+            const scaleX = (canvas.width - 100) / tMax;
+            const scaleY = 100;
+            const offsetY = canvas.height / 2;
+            
+            // x1の描画
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < steps; i++) {
+                const t = i * dt;
+                const x = 50 + t * scaleX;
+                const y = offsetY - x1 * scaleY;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                
+                // オイラー法
+                const dx1 = a11 * x1 + a12 * x2;
+                const dx2 = a21 * x1 + a22 * x2;
+                x1 += dx1 * dt;
+                x2 += dx2 * dt;
+            }
+            ctx.stroke();
+            
+            // 凡例
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = '14px Arial';
+            ctx.fillText('x₁(t)', canvas.width - 80, 30);
+        }
+
+        function drawAxes(ctx, width, height) {
+            const offsetY = height / 2;
+            
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(50, 20);
+            ctx.lineTo(50, height - 20);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(50, offsetY);
+            ctx.lineTo(width - 20, offsetY);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.fillText('0', 35, offsetY + 20);
+            ctx.fillText('t', width - 40, offsetY + 20);
+            ctx.fillText('x', 25, 30);
+        }
+
+        function resetDemo() {
+            document.getElementById('a11-slider').value = -1;
+            document.getElementById('a12-slider').value = 1;
+            document.getElementById('a21-slider').value = 0;
+            document.getElementById('a22-slider').value = -2;
+            document.getElementById('x1-slider').value = 1;
+            document.getElementById('x2-slider').value = 1;
+            
+            ['a11', 'a12', 'a21', 'a22', 'x1', 'x2'].forEach(id => {
+                document.getElementById(id + '-value').textContent = 
+                    document.getElementById(id + '-slider').value;
+            });
+            
+            simulateResponse();
+        }
+
+        // 初期化
+        simulateResponse();
+    </script>
+</body>
+</html>

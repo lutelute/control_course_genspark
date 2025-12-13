@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第15回: サーボシステム</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #27ae60; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .theory-box { background: #e8f8f5; padding: 20px; border-left: 4px solid #27ae60; margin: 20px 0; border-radius: 5px; }
+        .simulator { background: #f9f9f9; padding: 25px; border-radius: 8px; margin: 25px 0; border: 2px solid #ddd; }
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0; }
+        .control-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; color: #555; margin-bottom: 5px; }
+        input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        button { background: #27ae60; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        button:hover { background: #229954; }
+        .plot-container { margin: 20px 0; }
+        .matrix-display { background: white; padding: 15px; border-radius: 5px; font-family: monospace; margin: 10px 0; border: 1px solid #ddd; white-space: pre-wrap; }
+        .example { background: #fff9e6; padding: 15px; border-left: 4px solid #f39c12; margin: 20px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 第15回: サーボシステム</h1>
+        
+        <div class="theory-box">
+            <h2>📚 理論の概要</h2>
+            <p><strong>サーボシステム（Servo System）</strong>は、目標値に追従し、定常偏差をゼロにする制御系です。レギュレータ問題を拡張したものです。</p>
+            
+            <h3>レギュレータ vs サーボ</h3>
+            <ul>
+                <li><strong>レギュレータ</strong>: 状態を原点（ゼロ）に安定化 → \( x \to 0 \)</li>
+                <li><strong>サーボ</strong>: 出力を目標値に追従 → \( y \to r \)（目標値 r）</li>
+            </ul>
+            
+            <h3>積分器を用いたサーボ系</h3>
+            <p>定常偏差をゼロにするため、誤差の積分を状態に追加:</p>
+            <p>$$\dot{z} = r - y = r - Cx$$</p>
+            <p>拡大系の状態方程式:</p>
+            <p>$$\begin{bmatrix} \dot{x} \\ \dot{z} \end{bmatrix} = \begin{bmatrix} A & 0 \\ -C & 0 \end{bmatrix} \begin{bmatrix} x \\ z \end{bmatrix} + \begin{bmatrix} B \\ 0 \end{bmatrix} u + \begin{bmatrix} 0 \\ 1 \end{bmatrix} r$$</p>
+            
+            <h3>最適サーボ系（LQI: Linear Quadratic Integral）</h3>
+            <p>拡大系に対してLQRを適用することで最適サーボ系を設計:</p>
+            <p>$$u = -K_x x - K_z z$$</p>
+            
+            <h3>内部モデル原理</h3>
+            <p>外乱や目標値の特性（例: ステップ、ランプ、正弦波）を制御器内部でモデル化することで、その信号に対する定常偏差をゼロにできます。</p>
+        </div>
+
+        <div class="simulator">
+            <h2>🎮 インタラクティブシミュレーター: サーボ系設計</h2>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>システム選択:</label>
+                    <select id="systemType">
+                        <option value="custom">カスタム入力</option>
+                        <option value="motor">DCモータ</option>
+                        <option value="mass">質点系</option>
+                    </select>
+                </div>
+            </div>
+            
+            <h3>システム行列入力（2×2）</h3>
+            <div class="controls">
+                <div class="control-group">
+                    <label>A[0,0]:</label>
+                    <input type="number" id="a00" value="0" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[0,1]:</label>
+                    <input type="number" id="a01" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[1,0]:</label>
+                    <input type="number" id="a10" value="0" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>A[1,1]:</label>
+                    <input type="number" id="a11" value="-0.5" step="0.1">
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>B[0]:</label>
+                    <input type="number" id="b0" value="0" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>B[1]:</label>
+                    <input type="number" id="b1" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>C[0]:</label>
+                    <input type="number" id="c0" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>C[1]:</label>
+                    <input type="number" id="c1" value="0" step="0.1">
+                </div>
+            </div>
+            
+            <h3>制御パラメータ</h3>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Kₓ[0] (状態FB):</label>
+                    <input type="number" id="kx0" value="2" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>Kₓ[1] (状態FB):</label>
+                    <input type="number" id="kx1" value="3" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label>Kz (積分ゲイン):</label>
+                    <input type="number" id="kz" value="1" step="0.1">
+                </div>
+            </div>
+            
+            <h3>目標値設定</h3>
+            <div class="controls">
+                <div class="control-group">
+                    <label>目標値 r:</label>
+                    <input type="number" id="reference" value="1" step="0.1">
+                </div>
+            </div>
+            
+            <button onclick="simulateServo()">📈 サーボ応答をシミュレート</button>
+            <button onclick="compareRegulatorServo()">🔄 レギュレータと比較</button>
+            
+            <div id="servoPlot" class="plot-container"></div>
+            <div id="comparisonPlot" class="plot-container"></div>
+        </div>
+
+        <div class="example">
+            <h3>💡 実例: モータ位置制御サーボ</h3>
+            <p><strong>問題</strong>: DCモータの位置を目標角度に追従させるサーボ系を設計せよ。</p>
+            <p><strong>解答</strong>:</p>
+            <p>モータの状態方程式（角度 θ、角速度 ω）:</p>
+            <p>$$\begin{bmatrix} \dot{\theta} \\ \dot{\omega} \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ 0 & -b/J \end{bmatrix} \begin{bmatrix} \theta \\ \omega \end{bmatrix} + \begin{bmatrix} 0 \\ K/J \end{bmatrix} u$$</p>
+            <p>出力: \( y = \theta \)</p>
+            <p>積分状態 \( z = \int (r - \theta) dt \) を追加し、拡大系に対してLQRを適用。</p>
+            <p>結果: 定常偏差ゼロで目標角度に追従するサーボ系が実現される。</p>
+        </div>
+
+        <div class="theory-box">
+            <h2>🎯 重要ポイント</h2>
+            <ul>
+                <li>サーボ系は積分器を追加することで定常偏差をゼロにする</li>
+                <li>LQI（LQRに積分動作を追加）で最適サーボ系を設計可能</li>
+                <li>内部モデル原理: 外乱・目標値の特性をモデル化すれば追従可能</li>
+                <li>積分動作は低周波外乱抑制に有効だが、安定性に注意</li>
+                <li>実システムではアンチワインドアップ対策が必要</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function getSystem() {
+            const A = [
+                [parseFloat(document.getElementById('a00').value), parseFloat(document.getElementById('a01').value)],
+                [parseFloat(document.getElementById('a10').value), parseFloat(document.getElementById('a11').value)]
+            ];
+            const B = [parseFloat(document.getElementById('b0').value), parseFloat(document.getElementById('b1').value)];
+            const C = [parseFloat(document.getElementById('c0').value), parseFloat(document.getElementById('c1').value)];
+            const Kx = [parseFloat(document.getElementById('kx0').value), parseFloat(document.getElementById('kx1').value)];
+            const Kz = parseFloat(document.getElementById('kz').value);
+            const r = parseFloat(document.getElementById('reference').value);
+            return { A, B, C, Kx, Kz, r };
+        }
+
+        function simulateServo() {
+            const { A, B, C, Kx, Kz, r } = getSystem();
+            
+            const dt = 0.01;
+            const tMax = 10;
+            const steps = Math.floor(tMax / dt);
+            
+            let x = [0, 0];  // 状態
+            let z = 0;       // 積分状態
+            
+            const t = [];
+            const y_arr = [];
+            const r_arr = [];
+            const u_arr = [];
+            const e_arr = [];
+            
+            for (let i = 0; i <= steps; i++) {
+                t.push(i * dt);
+                
+                const y = C[0] * x[0] + C[1] * x[1];
+                const e = r - y;
+                
+                // 制御入力: u = -Kx*x - Kz*z
+                const u = -(Kx[0] * x[0] + Kx[1] * x[1] + Kz * z);
+                
+                // 状態更新
+                const dx = [
+                    A[0][0] * x[0] + A[0][1] * x[1] + B[0] * u,
+                    A[1][0] * x[0] + A[1][1] * x[1] + B[1] * u
+                ];
+                x[0] += dx[0] * dt;
+                x[1] += dx[1] * dt;
+                
+                // 積分状態更新
+                z += e * dt;
+                
+                y_arr.push(y);
+                r_arr.push(r);
+                u_arr.push(u);
+                e_arr.push(e);
+            }
+            
+            const traces = [
+                {
+                    x: t,
+                    y: r_arr,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '目標値 r',
+                    line: { color: '#95a5a6', width: 2, dash: 'dash' }
+                },
+                {
+                    x: t,
+                    y: y_arr,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '出力 y',
+                    line: { color: '#27ae60', width: 2 }
+                },
+                {
+                    x: t,
+                    y: e_arr,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '誤差 e = r - y',
+                    line: { color: '#e74c3c', width: 2 },
+                    yaxis: 'y2'
+                }
+            ];
+            
+            const layout = {
+                title: 'サーボ系の応答',
+                xaxis: { title: '時間 [s]' },
+                yaxis: { title: '出力 y', side: 'left' },
+                yaxis2: { title: '誤差 e', side: 'right', overlaying: 'y' },
+                hovermode: 'x'
+            };
+            
+            Plotly.newPlot('servoPlot', traces, layout);
+        }
+
+        function compareRegulatorServo() {
+            const { A, B, C, Kx, Kz, r } = getSystem();
+            
+            const dt = 0.01;
+            const tMax = 10;
+            const steps = Math.floor(tMax / dt);
+            
+            // サーボ系
+            let x_servo = [0, 0];
+            let z_servo = 0;
+            const y_servo = [];
+            
+            // レギュレータ（積分なし）
+            let x_reg = [0, 0];
+            const y_reg = [];
+            
+            const t = [];
+            
+            for (let i = 0; i <= steps; i++) {
+                t.push(i * dt);
+                
+                // サーボ系
+                const y_s = C[0] * x_servo[0] + C[1] * x_servo[1];
+                const e_s = r - y_s;
+                const u_s = -(Kx[0] * x_servo[0] + Kx[1] * x_servo[1] + Kz * z_servo);
+                
+                const dx_s = [
+                    A[0][0] * x_servo[0] + A[0][1] * x_servo[1] + B[0] * u_s,
+                    A[1][0] * x_servo[0] + A[1][1] * x_servo[1] + B[1] * u_s
+                ];
+                x_servo[0] += dx_s[0] * dt;
+                x_servo[1] += dx_s[1] * dt;
+                z_servo += e_s * dt;
+                y_servo.push(y_s);
+                
+                // レギュレータ（目標値を直接フィードフォワード）
+                const y_r = C[0] * x_reg[0] + C[1] * x_reg[1];
+                const u_r = -(Kx[0] * x_reg[0] + Kx[1] * x_reg[1]) + r; // 簡易FF
+                
+                const dx_r = [
+                    A[0][0] * x_reg[0] + A[0][1] * x_reg[1] + B[0] * u_r,
+                    A[1][0] * x_reg[0] + A[1][1] * x_reg[1] + B[1] * u_r
+                ];
+                x_reg[0] += dx_r[0] * dt;
+                x_reg[1] += dx_r[1] * dt;
+                y_reg.push(y_r);
+            }
+            
+            const traces = [
+                {
+                    x: t,
+                    y: Array(t.length).fill(r),
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: '目標値',
+                    line: { color: '#95a5a6', width: 2, dash: 'dash' }
+                },
+                {
+                    x: t,
+                    y: y_servo,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'サーボ系（積分あり）',
+                    line: { color: '#27ae60', width: 2 }
+                },
+                {
+                    x: t,
+                    y: y_reg,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'レギュレータ（積分なし）',
+                    line: { color: '#e74c3c', width: 2, dash: 'dot' }
+                }
+            ];
+            
+            const layout = {
+                title: 'サーボ系 vs レギュレータの比較',
+                xaxis: { title: '時間 [s]' },
+                yaxis: { title: '出力' },
+                hovermode: 'x'
+            };
+            
+            Plotly.newPlot('comparisonPlot', traces, layout);
+        }
+
+        document.getElementById('systemType').addEventListener('change', function() {
+            const type = this.value;
+            if (type === 'motor') {
+                document.getElementById('a00').value = '0';
+                document.getElementById('a01').value = '1';
+                document.getElementById('a10').value = '0';
+                document.getElementById('a11').value = '-0.5';
+                document.getElementById('b0').value = '0';
+                document.getElementById('b1').value = '2';
+                document.getElementById('c0').value = '1';
+                document.getElementById('c1').value = '0';
+            } else if (type === 'mass') {
+                document.getElementById('a00').value = '0';
+                document.getElementById('a01').value = '1';
+                document.getElementById('a10').value = '0';
+                document.getElementById('a11').value = '0';
+                document.getElementById('b0').value = '0';
+                document.getElementById('b1').value = '1';
+                document.getElementById('c0').value = '1';
+                document.getElementById('c1').value = '0';
+            }
+        });
+    </script>
+</body>
+</html>

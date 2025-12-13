@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第6回：安定性と極</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .content { padding: 40px; }
+        h2 {
+            color: #30cfd0;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #30cfd0;
+        }
+        .highlight-box {
+            background: #e0f7fa;
+            border-left: 5px solid #30cfd0;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .interactive-demo {
+            background: #f0f8ff;
+            border: 2px solid #4169e1;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 10px 5px;
+        }
+        button:hover { transform: translateY(-2px); }
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            display: block;
+            margin: 20px auto;
+            background: white;
+        }
+        .slider-container { margin: 15px 0; }
+        input[type="range"] { width: 100%; margin: 10px 0; }
+        .stability-indicator {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .stable { background: #c8e6c9; color: #2e7d32; }
+        .unstable { background: #ffcdd2; color: #c62828; }
+        .marginal { background: #fff9c4; color: #f57f17; }
+        .pole-display {
+            font-family: 'Courier New', monospace;
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        ul { margin-left: 30px; margin-top: 10px; }
+        li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚖️ 第6回：安定性と極</h1>
+            <p style="font-size: 1.2em; opacity: 0.9;">Stability and Poles</p>
+        </header>
+        
+        <div class="content">
+            <div class="highlight-box">
+                <h3>🎯 学習目標</h3>
+                <ul>
+                    <li>システムの安定性の概念を理解する</li>
+                    <li>極と固有値の関係を把握する</li>
+                    <li>Routh-Hurwitzの安定判別法を学ぶ</li>
+                </ul>
+            </div>
+
+            <h2>1. 安定性の定義</h2>
+            
+            <div style="background: #f9f9f9; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                <h3>極の位置と安定性</h3>
+                <p><strong>漸近安定：</strong>すべての極の実部が負（左半平面）</p>
+                <p><strong>限界安定：</strong>極が虚軸上（実部がゼロ）</p>
+                <p><strong>不安定：</strong>いずれかの極の実部が正（右半平面）</p>
+            </div>
+
+            <h2>2. インタラクティブデモ：極と応答の関係</h2>
+            
+            <div class="interactive-demo">
+                <h3>🔧 極の位置シミュレータ</h3>
+                
+                <p>2次システムの極: \(\lambda_{1,2} = -\zeta\omega_n \pm j\omega_n\sqrt{1-\zeta^2}\)</p>
+                
+                <div class="slider-container">
+                    <label>減衰係数 ζ (zeta): <span id="zeta-value">0.5</span></label>
+                    <input type="range" id="zeta-slider" min="-0.5" max="2" step="0.05" value="0.5">
+                </div>
+                
+                <div class="slider-container">
+                    <label>固有角周波数 ωₙ: <span id="omega-value">2.0</span></label>
+                    <input type="range" id="omega-slider" min="0.5" max="5" step="0.1" value="2">
+                </div>
+                
+                <button onclick="updatePoles()">極を更新</button>
+                <button onclick="resetPoles()">リセット</button>
+                
+                <div id="stability-status" class="stability-indicator"></div>
+                
+                <div class="pole-display">
+                    <h4>極の位置:</h4>
+                    <pre id="pole-values"></pre>
+                    <h4 style="margin-top: 10px;">性能指標:</h4>
+                    <pre id="performance-metrics"></pre>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4 style="text-align: center;">複素平面（s平面）</h4>
+                        <canvas id="pole-canvas" width="400" height="400"></canvas>
+                    </div>
+                    <div>
+                        <h4 style="text-align: center;">ステップ応答</h4>
+                        <canvas id="response-canvas" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <h2>3. Routh-Hurwitzの安定判別</h2>
+            
+            <div class="interactive-demo">
+                <h3>🧮 Routh配列計算器</h3>
+                
+                <p>特性多項式: \(s^3 + a_2s^2 + a_1s + a_0 = 0\)</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0;">
+                    <div>
+                        <label>a₂:</label>
+                        <input type="number" id="routh-a2" value="3" step="0.1" style="width: 100%; padding: 5px;">
+                    </div>
+                    <div>
+                        <label>a₁:</label>
+                        <input type="number" id="routh-a1" value="3" step="0.1" style="width: 100%; padding: 5px;">
+                    </div>
+                    <div>
+                        <label>a₀:</label>
+                        <input type="number" id="routh-a0" value="1" step="0.1" style="width: 100%; padding: 5px;">
+                    </div>
+                </div>
+                
+                <button onclick="calculateRouth()">Routh配列を計算</button>
+                
+                <div class="pole-display">
+                    <h4>Routh配列:</h4>
+                    <pre id="routh-array"></pre>
+                    <h4 style="margin-top: 10px;">判定結果:</h4>
+                    <pre id="routh-result"></pre>
+                </div>
+            </div>
+
+            <h2>4. まとめ</h2>
+            <div class="highlight-box">
+                <ul>
+                    <li>システムの安定性は極（固有値）の位置で決まる</li>
+                    <li>左半平面の極 → 漸近安定</li>
+                    <li>Routh-Hurwitz法により固有値を計算せずに安定性判定可能</li>
+                    <li>減衰係数ζは相対安定度の指標</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('zeta-slider').addEventListener('input', function() {
+            document.getElementById('zeta-value').textContent = this.value;
+        });
+        
+        document.getElementById('omega-slider').addEventListener('input', function() {
+            document.getElementById('omega-value').textContent = this.value;
+        });
+
+        function updatePoles() {
+            const zeta = parseFloat(document.getElementById('zeta-slider').value);
+            const omega = parseFloat(document.getElementById('omega-slider').value);
+            
+            // 極の計算
+            let pole1_real, pole1_imag, pole2_real, pole2_imag;
+            
+            if (zeta < 1) {
+                pole1_real = pole2_real = -zeta * omega;
+                pole1_imag = omega * Math.sqrt(1 - zeta * zeta);
+                pole2_imag = -pole1_imag;
+            } else {
+                pole1_real = -zeta * omega + omega * Math.sqrt(zeta * zeta - 1);
+                pole2_real = -zeta * omega - omega * Math.sqrt(zeta * zeta - 1);
+                pole1_imag = pole2_imag = 0;
+            }
+            
+            // 安定性判定
+            let stability = '';
+            if (pole1_real < 0 && pole2_real < 0) {
+                stability = '漸近安定（Asymptotically Stable）';
+                document.getElementById('stability-status').className = 'stability-indicator stable';
+            } else if (pole1_real === 0 || pole2_real === 0) {
+                stability = '限界安定（Marginally Stable）';
+                document.getElementById('stability-status').className = 'stability-indicator marginal';
+            } else {
+                stability = '不安定（Unstable）';
+                document.getElementById('stability-status').className = 'stability-indicator unstable';
+            }
+            document.getElementById('stability-status').textContent = stability;
+            
+            // 極の表示
+            let poleText = '';
+            if (pole1_imag === 0) {
+                poleText = `λ₁ = ${pole1_real.toFixed(3)}\nλ₂ = ${pole2_real.toFixed(3)}`;
+            } else {
+                poleText = `λ₁ = ${pole1_real.toFixed(3)} + ${Math.abs(pole1_imag).toFixed(3)}j\nλ₂ = ${pole2_real.toFixed(3)} - ${Math.abs(pole1_imag).toFixed(3)}j`;
+            }
+            document.getElementById('pole-values').textContent = poleText;
+            
+            // 性能指標
+            const settling_time = zeta > 0 ? 4 / (zeta * omega) : Infinity;
+            const overshoot = zeta < 1 && zeta > 0 ? Math.exp(-Math.PI * zeta / Math.sqrt(1 - zeta * zeta)) * 100 : 0;
+            
+            document.getElementById('performance-metrics').textContent = 
+                `整定時間 (2%): ${settling_time.toFixed(3)} s\nオーバーシュート: ${overshoot.toFixed(1)} %`;
+            
+            // グラフ描画
+            drawPoles(pole1_real, pole1_imag, pole2_real, pole2_imag);
+            drawResponse(zeta, omega);
+        }
+
+        function drawPoles(r1, i1, r2, i2) {
+            const canvas = document.getElementById('pole-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = 40;
+            
+            // 軸
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+            
+            // 左半平面の色付け
+            ctx.fillStyle = 'rgba(200, 230, 201, 0.3)';
+            ctx.fillRect(0, 0, centerX, canvas.height);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.fillText('左半平面', 50, 30);
+            ctx.fillText('(安定)', 60, 50);
+            ctx.fillText('右半平面', canvas.width - 100, 30);
+            ctx.fillText('(不安定)', canvas.width - 100, 50);
+            ctx.fillText('Re', canvas.width - 30, centerY - 10);
+            ctx.fillText('Im', centerX + 10, 20);
+            
+            // 極の描画
+            ctx.fillStyle = '#e91e63';
+            ctx.beginPath();
+            ctx.arc(centerX + r1 * scale, centerY - i1 * scale, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(centerX + r2 * scale, centerY - i2 * scale, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // ×印
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX + r1 * scale - 5, centerY - i1 * scale - 5);
+            ctx.lineTo(centerX + r1 * scale + 5, centerY - i1 * scale + 5);
+            ctx.moveTo(centerX + r1 * scale + 5, centerY - i1 * scale - 5);
+            ctx.lineTo(centerX + r1 * scale - 5, centerY - i1 * scale + 5);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX + r2 * scale - 5, centerY - i2 * scale - 5);
+            ctx.lineTo(centerX + r2 * scale + 5, centerY - i2 * scale + 5);
+            ctx.moveTo(centerX + r2 * scale + 5, centerY - i2 * scale - 5);
+            ctx.lineTo(centerX + r2 * scale - 5, centerY - i2 * scale + 5);
+            ctx.stroke();
+        }
+
+        function drawResponse(zeta, omega) {
+            const canvas = document.getElementById('response-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 軸
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(50, canvas.height - 50);
+            ctx.lineTo(canvas.width - 20, canvas.height - 50);
+            ctx.moveTo(50, 20);
+            ctx.lineTo(50, canvas.height - 50);
+            ctx.stroke();
+            
+            const tMax = 10;
+            const dt = 0.01;
+            const steps = tMax / dt;
+            
+            const scaleX = (canvas.width - 70) / tMax;
+            const scaleY = 250;
+            const offsetY = canvas.height - 50;
+            
+            // ステップ応答の計算と描画
+            ctx.strokeStyle = '#30cfd0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < steps; i++) {
+                const t = i * dt;
+                let y;
+                
+                if (zeta < 1 && zeta > 0) {
+                    // 不足減衰
+                    const wd = omega * Math.sqrt(1 - zeta * zeta);
+                    y = 1 - Math.exp(-zeta * omega * t) * 
+                        (Math.cos(wd * t) + zeta / Math.sqrt(1 - zeta * zeta) * Math.sin(wd * t));
+                } else if (zeta === 1) {
+                    // 臨界減衰
+                    y = 1 - Math.exp(-omega * t) * (1 + omega * t);
+                } else if (zeta > 1) {
+                    // 過減衰
+                    const s1 = -zeta * omega + omega * Math.sqrt(zeta * zeta - 1);
+                    const s2 = -zeta * omega - omega * Math.sqrt(zeta * zeta - 1);
+                    y = 1 + (s2 * Math.exp(s1 * t) - s1 * Math.exp(s2 * t)) / (s2 - s1);
+                } else {
+                    // 不安定
+                    const wd = omega * Math.sqrt(1 - zeta * zeta);
+                    y = 1 - Math.exp(-zeta * omega * t) * 
+                        (Math.cos(wd * t) + zeta / Math.sqrt(1 - zeta * zeta) * Math.sin(wd * t));
+                }
+                
+                const x = 50 + t * scaleX;
+                const py = offsetY - y * scaleY;
+                
+                if (i === 0) ctx.moveTo(x, py);
+                else ctx.lineTo(x, py);
+            }
+            ctx.stroke();
+            
+            // 目標値のライン
+            ctx.strokeStyle = '#999';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(50, offsetY - scaleY);
+            ctx.lineTo(canvas.width - 20, offsetY - scaleY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.fillText('時間 (s)', canvas.width - 60, canvas.height - 30);
+            ctx.fillText('出力', 20, 30);
+        }
+
+        function resetPoles() {
+            document.getElementById('zeta-slider').value = 0.5;
+            document.getElementById('omega-slider').value = 2;
+            document.getElementById('zeta-value').textContent = '0.5';
+            document.getElementById('omega-value').textContent = '2.0';
+            updatePoles();
+        }
+
+        function calculateRouth() {
+            const a2 = parseFloat(document.getElementById('routh-a2').value);
+            const a1 = parseFloat(document.getElementById('routh-a1').value);
+            const a0 = parseFloat(document.getElementById('routh-a0').value);
+            
+            // Routh配列の計算
+            const r30 = 1;
+            const r31 = a1;
+            const r20 = a2;
+            const r21 = a0;
+            const r10 = (a2 * a1 - a0) / a2;
+            const r00 = a0;
+            
+            let arrayText = `s³ | ${r30}     ${r31}\n`;
+            arrayText += `s² | ${a2}     ${a0}\n`;
+            arrayText += `s¹ | ${r10.toFixed(4)}     0\n`;
+            arrayText += `s⁰ | ${r00}`;
+            
+            document.getElementById('routh-array').textContent = arrayText;
+            
+            // 安定性判定
+            const firstColumn = [r30, r20, r10, r00];
+            let signChanges = 0;
+            for (let i = 0; i < firstColumn.length - 1; i++) {
+                if (firstColumn[i] * firstColumn[i+1] < 0) {
+                    signChanges++;
+                }
+            }
+            
+            let result = '';
+            if (signChanges === 0 && firstColumn.every(x => x > 0)) {
+                result = '✓ 安定（すべての極が左半平面）\n第1列の符号変化なし';
+            } else {
+                result = `✗ 不安定\n右半平面の根の数: ${signChanges}`;
+            }
+            
+            document.getElementById('routh-result').textContent = result;
+        }
+
+        // 初期化
+        updatePoles();
+        calculateRouth();
+    </script>
+</body>
+</html>

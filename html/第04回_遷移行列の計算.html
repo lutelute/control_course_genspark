@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第4回：遷移行列の計算</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { font-size: 1.2em; opacity: 0.9; }
+        .content { padding: 40px; }
+        h2 {
+            color: #fa709a;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #fa709a;
+        }
+        h3 { color: #fee140; margin-top: 25px; margin-bottom: 10px; }
+        .highlight-box {
+            background: #fff5f5;
+            border-left: 5px solid #fa709a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .interactive-demo {
+            background: #f0f8ff;
+            border: 2px solid #4169e1;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(250, 112, 154, 0.4);
+        }
+        .method-tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #fa709a;
+            color: white;
+            border-color: #fa709a;
+        }
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            display: block;
+            margin: 20px auto;
+            background: white;
+        }
+        .formula {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .slider-container { margin: 15px 0; }
+        input[type="range"] { width: 100%; margin: 10px 0; }
+        .value-display {
+            font-family: 'Courier New', monospace;
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .matrix-input {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .matrix-input input {
+            width: 60px;
+            padding: 5px;
+            margin: 3px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        ul { margin-left: 30px; margin-top: 10px; }
+        li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧮 第4回：遷移行列の計算</h1>
+            <p class="subtitle">Computing the State Transition Matrix</p>
+        </header>
+        
+        <div class="content">
+            <div class="highlight-box">
+                <h3>🎯 学習目標</h3>
+                <ul>
+                    <li>遷移行列の様々な計算方法を習得する</li>
+                    <li>ラプラス変換法、対角化法、Cayley-Hamilton法を理解する</li>
+                    <li>実際の計算スキルを身につける</li>
+                </ul>
+            </div>
+
+            <h2>1. 遷移行列の計算方法</h2>
+            
+            <div class="formula">
+                <h3>状態遷移行列</h3>
+                <p>$$\boldsymbol{\Phi}(t) = e^{\mathbf{A}t}$$</p>
+                <p style="margin-top: 10px;">計算方法：</p>
+                <ul>
+                    <li><strong>ラプラス変換法：</strong> \(e^{\mathbf{A}t} = \mathcal{L}^{-1}[(s\mathbf{I} - \mathbf{A})^{-1}]\)</li>
+                    <li><strong>対角化法：</strong> \(e^{\mathbf{A}t} = \mathbf{P}e^{\boldsymbol{\Lambda}t}\mathbf{P}^{-1}\)</li>
+                    <li><strong>Cayley-Hamilton法：</strong> 特性方程式を利用</li>
+                </ul>
+            </div>
+
+            <h2>2. インタラクティブ計算ツール</h2>
+            
+            <div class="interactive-demo">
+                <h3>🔧 遷移行列計算器</h3>
+                
+                <div class="method-tabs">
+                    <div class="tab active" onclick="selectMethod('laplace')">ラプラス変換法</div>
+                    <div class="tab" onclick="selectMethod('diagonal')">対角化法</div>
+                    <div class="tab" onclick="selectMethod('cayley')">Cayley-Hamilton法</div>
+                </div>
+
+                <div class="matrix-grid">
+                    <div class="matrix-input">
+                        <h4>システム行列 A</h4>
+                        <div>
+                            <input type="number" id="a11" value="0" step="0.1"> 
+                            <input type="number" id="a12" value="1" step="0.1">
+                        </div>
+                        <div>
+                            <input type="number" id="a21" value="-2" step="0.1"> 
+                            <input type="number" id="a22" value="-3" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <div class="matrix-input">
+                        <h4>時間 t</h4>
+                        <input type="number" id="time" value="1.0" step="0.1" style="width: 120px;">
+                        <p style="margin-top: 10px; font-size: 0.9em;">計算する時刻を指定</p>
+                    </div>
+                </div>
+                
+                <button onclick="calculateTransition()">遷移行列を計算</button>
+                <button onclick="resetCalculator()">リセット</button>
+                
+                <div class="value-display">
+                    <h4>計算手順:</h4>
+                    <pre id="calculation-steps"></pre>
+                    <h4 style="margin-top: 15px;">結果: Φ(t) = e^(At)</h4>
+                    <pre id="result-matrix"></pre>
+                </div>
+                
+                <h3 style="margin-top: 30px;">時間応答の可視化</h3>
+                <canvas id="transition-canvas" width="800" height="400"></canvas>
+            </div>
+
+            <h2>3. 各計算方法の特徴</h2>
+            
+            <div class="highlight-box">
+                <h3>📊 方法の比較</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr style="background: #fa709a; color: white;">
+                        <th style="padding: 10px; border: 1px solid #ddd;">方法</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">長所</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">短所</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>ラプラス変換</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">系統的、確実</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">逆変換が複雑</td>
+                    </tr>
+                    <tr style="background: #f9f9f9;">
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>対角化</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">直感的、計算簡単</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">対角化不可能な場合あり</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><strong>Cayley-Hamilton</strong></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">低次元で便利</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">高次元では煩雑</td>
+                    </tr>
+                </table>
+            </div>
+
+            <h2>4. まとめ</h2>
+            <div class="highlight-box">
+                <ul>
+                    <li>遷移行列の計算には複数の方法がある</li>
+                    <li>システムの特性に応じて最適な方法を選択</li>
+                    <li>固有値が実数か複素数かで計算の複雑さが変わる</li>
+                    <li>実用的には数値計算ソフトウェアを使用</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMethod = 'laplace';
+
+        function selectMethod(method) {
+            currentMethod = method;
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function calculateTransition() {
+            const a11 = parseFloat(document.getElementById('a11').value);
+            const a12 = parseFloat(document.getElementById('a12').value);
+            const a21 = parseFloat(document.getElementById('a21').value);
+            const a22 = parseFloat(document.getElementById('a22').value);
+            const t = parseFloat(document.getElementById('time').value);
+            
+            let steps = '';
+            let phi11, phi12, phi21, phi22;
+            
+            // 固有値計算
+            const trace = a11 + a22;
+            const det = a11 * a22 - a12 * a21;
+            const disc = trace * trace - 4 * det;
+            
+            steps += `システム行列 A = [${a11} ${a12}; ${a21} ${a22}]\n`;
+            steps += `時刻 t = ${t}\n\n`;
+            
+            if (currentMethod === 'laplace') {
+                steps += '【ラプラス変換法】\n';
+                steps += `特性多項式: det(sI - A) = s² - ${trace}s + ${det}\n`;
+                
+                if (disc >= 0) {
+                    const lambda1 = (trace + Math.sqrt(disc)) / 2;
+                    const lambda2 = (trace - Math.sqrt(disc)) / 2;
+                    steps += `固有値: λ₁ = ${lambda1.toFixed(3)}, λ₂ = ${lambda2.toFixed(3)}\n\n`;
+                    
+                    // 計算（簡略化）
+                    phi11 = (lambda1 * Math.exp(lambda2 * t) - lambda2 * Math.exp(lambda1 * t)) / (lambda1 - lambda2);
+                    phi12 = (Math.exp(lambda1 * t) - Math.exp(lambda2 * t)) / (lambda1 - lambda2);
+                    phi21 = a21 * phi12;
+                    phi22 = (lambda1 * Math.exp(lambda1 * t) - lambda2 * Math.exp(lambda2 * t)) / (lambda1 - lambda2);
+                } else {
+                    const alpha = trace / 2;
+                    const omega = Math.sqrt(-disc) / 2;
+                    steps += `固有値: λ = ${alpha.toFixed(3)} ± ${omega.toFixed(3)}j\n\n`;
+                    
+                    const eat = Math.exp(alpha * t);
+                    phi11 = eat * (Math.cos(omega * t) - (a22 - alpha) / omega * Math.sin(omega * t));
+                    phi12 = eat * a12 / omega * Math.sin(omega * t);
+                    phi21 = eat * a21 / omega * Math.sin(omega * t);
+                    phi22 = eat * (Math.cos(omega * t) + (a11 - alpha) / omega * Math.sin(omega * t));
+                }
+            } else if (currentMethod === 'diagonal') {
+                steps += '【対角化法】\n';
+                if (disc >= 0) {
+                    const lambda1 = (trace + Math.sqrt(disc)) / 2;
+                    const lambda2 = (trace - Math.sqrt(disc)) / 2;
+                    steps += `固有値: λ₁ = ${lambda1.toFixed(3)}, λ₂ = ${lambda2.toFixed(3)}\n`;
+                    steps += `Φ(t) = P·diag(e^(λ₁t), e^(λ₂t))·P⁻¹\n\n`;
+                    
+                    phi11 = (lambda1 * Math.exp(lambda2 * t) - lambda2 * Math.exp(lambda1 * t)) / (lambda1 - lambda2);
+                    phi12 = (Math.exp(lambda1 * t) - Math.exp(lambda2 * t)) / (lambda1 - lambda2);
+                    phi21 = a21 * phi12;
+                    phi22 = (lambda1 * Math.exp(lambda1 * t) - lambda2 * Math.exp(lambda2 * t)) / (lambda1 - lambda2);
+                } else {
+                    steps += '複素固有値のため、Jordan標準形を使用\n\n';
+                    const alpha = trace / 2;
+                    const omega = Math.sqrt(-disc) / 2;
+                    
+                    const eat = Math.exp(alpha * t);
+                    phi11 = eat * (Math.cos(omega * t) - (a22 - alpha) / omega * Math.sin(omega * t));
+                    phi12 = eat * a12 / omega * Math.sin(omega * t);
+                    phi21 = eat * a21 / omega * Math.sin(omega * t);
+                    phi22 = eat * (Math.cos(omega * t) + (a11 - alpha) / omega * Math.sin(omega * t));
+                }
+            } else {
+                steps += '【Cayley-Hamilton法】\n';
+                steps += `特性方程式: λ² + a₁λ + a₀ = 0\n`;
+                steps += `a₁ = -${trace}, a₀ = ${det}\n`;
+                steps += `Φ(t) = α₀(t)I + α₁(t)A\n\n`;
+                
+                if (disc >= 0) {
+                    const lambda1 = (trace + Math.sqrt(disc)) / 2;
+                    const lambda2 = (trace - Math.sqrt(disc)) / 2;
+                    
+                    const alpha0 = (lambda1 * Math.exp(lambda2 * t) - lambda2 * Math.exp(lambda1 * t)) / (lambda1 - lambda2);
+                    const alpha1 = (Math.exp(lambda1 * t) - Math.exp(lambda2 * t)) / (lambda1 - lambda2);
+                    
+                    phi11 = alpha0 + alpha1 * a11;
+                    phi12 = alpha1 * a12;
+                    phi21 = alpha1 * a21;
+                    phi22 = alpha0 + alpha1 * a22;
+                } else {
+                    const alpha = trace / 2;
+                    const omega = Math.sqrt(-disc) / 2;
+                    
+                    const eat = Math.exp(alpha * t);
+                    phi11 = eat * (Math.cos(omega * t) - (a22 - alpha) / omega * Math.sin(omega * t));
+                    phi12 = eat * a12 / omega * Math.sin(omega * t);
+                    phi21 = eat * a21 / omega * Math.sin(omega * t);
+                    phi22 = eat * (Math.cos(omega * t) + (a11 - alpha) / omega * Math.sin(omega * t));
+                }
+            }
+            
+            document.getElementById('calculation-steps').textContent = steps;
+            document.getElementById('result-matrix').textContent = 
+                `Φ(${t}) = [\n  ${phi11.toFixed(6)}  ${phi12.toFixed(6)}\n  ${phi21.toFixed(6)}  ${phi22.toFixed(6)}\n]`;
+            
+            // グラフ描画
+            plotTransition(a11, a12, a21, a22);
+        }
+
+        function plotTransition(a11, a12, a21, a22) {
+            const canvas = document.getElementById('transition-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 軸
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(50, canvas.height - 50);
+            ctx.lineTo(canvas.width - 20, canvas.height - 50);
+            ctx.moveTo(50, 20);
+            ctx.lineTo(50, canvas.height - 50);
+            ctx.stroke();
+            
+            // シミュレーション
+            const tMax = 5;
+            const dt = 0.01;
+            const steps = tMax / dt;
+            
+            let x1 = 1, x2 = 0;
+            
+            const scaleX = (canvas.width - 100) / tMax;
+            const scaleY = 150;
+            const offsetY = canvas.height - 50;
+            
+            ctx.strokeStyle = '#fa709a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < steps; i++) {
+                const t = i * dt;
+                const x = 50 + t * scaleX;
+                const y = offsetY - x1 * scaleY;
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                
+                const dx1 = a11 * x1 + a12 * x2;
+                const dx2 = a21 * x1 + a22 * x2;
+                x1 += dx1 * dt;
+                x2 += dx2 * dt;
+            }
+            ctx.stroke();
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.fillText('時間 (s)', canvas.width - 60, canvas.height - 30);
+            ctx.fillText('状態', 20, 30);
+        }
+
+        function resetCalculator() {
+            document.getElementById('a11').value = 0;
+            document.getElementById('a12').value = 1;
+            document.getElementById('a21').value = -2;
+            document.getElementById('a22').value = -3;
+            document.getElementById('time').value = 1;
+            calculateTransition();
+        }
+
+        // 初期化
+        calculateTransition();
+    </script>
+</body>
+</html>

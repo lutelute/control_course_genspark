@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>第8回：可制御性</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        header { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: white; padding: 40px; text-align: center; }
+        h1 { font-size: 2.5em; }
+        .content { padding: 40px; }
+        h2 { color: #a8edea; border-bottom: 3px solid #a8edea; padding-bottom: 10px; margin: 30px 0 15px; }
+        .interactive-demo { background: #f0f8ff; border: 2px solid #4169e1; padding: 25px; margin: 25px 0; border-radius: 10px; }
+        button { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; margin: 10px 5px; }
+        input[type="number"] { padding: 8px; margin: 5px; width: 80px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { font-family: monospace; background: #263238; color: #aed581; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .matrix-input { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>🎮 第8回：可制御性</h1></header>
+        <div class="content">
+            <h2>可制御性の判定</h2>
+            <div class="interactive-demo">
+                <h3>可制御性行列のランク計算</h3>
+                <p>システム行列 A と入力行列 B を入力してください</p>
+                <div class="matrix-input">
+                    <div>
+                        <h4>A (2×2)</h4>
+                        <input type="number" id="a11" value="0" step="0.1">
+                        <input type="number" id="a12" value="1" step="0.1"><br>
+                        <input type="number" id="a21" value="-2" step="0.1">
+                        <input type="number" id="a22" value="-3" step="0.1">
+                    </div>
+                    <div>
+                        <h4>B (2×1)</h4>
+                        <input type="number" id="b1" value="0" step="0.1"><br>
+                        <input type="number" id="b2" value="1" step="0.1">
+                    </div>
+                </div>
+                <button onclick="checkControllability()">可制御性を判定</button>
+                <div class="result" id="result"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function checkControllability() {
+            const a11 = parseFloat(document.getElementById('a11').value);
+            const a12 = parseFloat(document.getElementById('a12').value);
+            const a21 = parseFloat(document.getElementById('a21').value);
+            const a22 = parseFloat(document.getElementById('a22').value);
+            const b1 = parseFloat(document.getElementById('b1').value);
+            const b2 = parseFloat(document.getElementById('b2').value);
+            
+            // AB の計算
+            const ab1 = a11 * b1 + a12 * b2;
+            const ab2 = a21 * b1 + a22 * b2;
+            
+            // 可制御性行列 Cc = [B AB]
+            const det = b1 * ab2 - b2 * ab1;
+            
+            let result = `可制御性行列 Cc = [B  AB] =\n`;
+            result += `[${b1.toFixed(4)}  ${ab1.toFixed(4)}]\n`;
+            result += `[${b2.toFixed(4)}  ${ab2.toFixed(4)}]\n\n`;
+            result += `det(Cc) = ${det.toFixed(6)}\n`;
+            result += `rank(Cc) = ${Math.abs(det) > 0.0001 ? 2 : 1}\n\n`;
+            result += Math.abs(det) > 0.0001 ? '✓ 完全可制御' : '✗ 可制御ではない';
+            
+            document.getElementById('result').textContent = result;
+        }
+        checkControllability();
+    </script>
+</body>
+</html>

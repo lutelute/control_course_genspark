@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第1回：システムの状態空間表現</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px;
+        }
+        h2 {
+            color: #667eea;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        h3 {
+            color: #764ba2;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+        .highlight-box {
+            background: #f0f4ff;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .example-box {
+            background: #fff8e1;
+            border-left: 5px solid #ffa726;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .interactive-demo {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 10px;
+        }
+        .matrix-display {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .slider-container {
+            margin: 15px 0;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            display: block;
+            margin: 20px auto;
+            background: white;
+        }
+        .formula {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .exercise {
+            background: #ffebee;
+            border-left: 5px solid #e91e63;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .value-display {
+            font-family: 'Courier New', monospace;
+            background: #263238;
+            color: #aed581;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        ul {
+            margin-left: 30px;
+            margin-top: 10px;
+        }
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 第1回：システムの状態空間表現</h1>
+            <p class="subtitle">State Space Representation of Systems</p>
+        </header>
+        
+        <div class="content">
+            <div class="highlight-box">
+                <h3>🎯 学習目標</h3>
+                <ul>
+                    <li>動的システムを状態空間表現で記述する方法を理解する</li>
+                    <li>状態変数、入力、出力の概念を把握する</li>
+                    <li>状態方程式と出力方程式の構成方法を学ぶ</li>
+                </ul>
+            </div>
+
+            <h2>1. はじめに</h2>
+            <p>制御工学において、システムの動的な振る舞いを数学的に表現することは非常に重要です。本講義では、<strong>状態空間表現</strong>という現代制御理論の基礎となる表現方法を学びます。</p>
+
+            <h3>なぜ状態空間表現が必要か？</h3>
+            <ul>
+                <li>多入力多出力（MIMO）システムの取り扱いが容易</li>
+                <li>内部状態の直接的な観測と制御が可能</li>
+                <li>非線形システムへの拡張が自然</li>
+                <li>計算機による数値計算に適している</li>
+            </ul>
+
+            <h2>2. 状態空間表現の基本概念</h2>
+            
+            <div class="highlight-box">
+                <h3>状態変数とは</h3>
+                <p><strong>状態変数（state variable）</strong>とは、システムの現在の状況を完全に記述するために必要な最小限の変数の集合です。</p>
+            </div>
+
+            <div class="formula">
+                <h3>状態空間表現の一般形</h3>
+                <p><strong>状態方程式：</strong></p>
+                <p>$$\dot{\mathbf{x}}(t) = \mathbf{A}\mathbf{x}(t) + \mathbf{B}\mathbf{u}(t)$$</p>
+                <p><strong>出力方程式：</strong></p>
+                <p>$$\mathbf{y}(t) = \mathbf{C}\mathbf{x}(t) + \mathbf{D}\mathbf{u}(t)$$</p>
+            </div>
+
+            <h2>3. インタラクティブデモ：質量-バネ-ダンパ系</h2>
+            
+            <div class="interactive-demo">
+                <h3>🔧 パラメータ調整</h3>
+                
+                <div class="slider-container">
+                    <label>質量 m (kg): <span id="mass-value">2.0</span></label>
+                    <input type="range" id="mass-slider" min="0.5" max="5" step="0.1" value="2">
+                </div>
+                
+                <div class="slider-container">
+                    <label>バネ定数 k (N/m): <span id="spring-value">8.0</span></label>
+                    <input type="range" id="spring-slider" min="1" max="20" step="0.5" value="8">
+                </div>
+                
+                <div class="slider-container">
+                    <label>減衰係数 c (N·s/m): <span id="damping-value">4.0</span></label>
+                    <input type="range" id="damping-slider" min="0" max="10" step="0.1" value="4">
+                </div>
+
+                <div class="slider-container">
+                    <label>初期変位 x₀ (m): <span id="initial-value">1.0</span></label>
+                    <input type="range" id="initial-slider" min="-2" max="2" step="0.1" value="1">
+                </div>
+                
+                <button onclick="updateSimulation()">シミュレーション実行</button>
+                <button onclick="resetSimulation()">リセット</button>
+                
+                <div class="value-display">
+                    <h4>システム行列 A:</h4>
+                    <pre id="matrix-a"></pre>
+                    <h4>入力行列 B:</h4>
+                    <pre id="matrix-b"></pre>
+                </div>
+                
+                <canvas id="simulation-canvas" width="800" height="400"></canvas>
+            </div>
+
+            <div class="example-box">
+                <h3>📝 例：質量-バネ-ダンパ系の状態方程式</h3>
+                <p>運動方程式: \(m\ddot{x} + c\dot{x} + kx = f(t)\)</p>
+                <p>状態変数: \(x_1 = x\), \(x_2 = \dot{x}\)</p>
+                <div class="formula">
+                    <p>$$\begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ -\frac{k}{m} & -\frac{c}{m} \end{bmatrix} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} + \begin{bmatrix} 0 \\ \frac{1}{m} \end{bmatrix} f(t)$$</p>
+                </div>
+            </div>
+
+            <h2>4. 高階微分方程式からの変換</h2>
+            
+            <div class="interactive-demo">
+                <h3>🔄 可制御正準形への変換デモ</h3>
+                <p>一般的な2階微分方程式: \(\ddot{y} + a_1\dot{y} + a_0 y = b_0 u(t)\)</p>
+                
+                <div class="slider-container">
+                    <label>係数 a₁: <span id="a1-value">3.0</span></label>
+                    <input type="range" id="a1-slider" min="0" max="10" step="0.1" value="3">
+                </div>
+                
+                <div class="slider-container">
+                    <label>係数 a₀: <span id="a0-value">2.0</span></label>
+                    <input type="range" id="a0-slider" min="0" max="10" step="0.1" value="2">
+                </div>
+                
+                <div class="slider-container">
+                    <label>係数 b₀: <span id="b0-value">1.0</span></label>
+                    <input type="range" id="b0-slider" min="0" max="5" step="0.1" value="1">
+                </div>
+                
+                <button onclick="updateCanonicalForm()">正準形を計算</button>
+                
+                <div class="value-display">
+                    <h4>可制御正準形:</h4>
+                    <pre id="canonical-result"></pre>
+                </div>
+            </div>
+
+            <div class="exercise">
+                <h3>💡 演習問題</h3>
+                <h4>問題1</h4>
+                <p>以下の2階微分方程式を状態空間表現に変換せよ：</p>
+                <p>$$\ddot{y} + 3\dot{y} + 2y = u(t)$$</p>
+                
+                <h4>問題2</h4>
+                <p>以下のパラメータを持つ質量-バネ-ダンパ系の状態空間表現を求めよ：</p>
+                <ul>
+                    <li>質量 m = 2 kg</li>
+                    <li>バネ定数 k = 8 N/m</li>
+                    <li>減衰係数 c = 4 N·s/m</li>
+                </ul>
+            </div>
+
+            <h2>5. まとめ</h2>
+            <div class="highlight-box">
+                <ul>
+                    <li>状態空間表現は、システムの内部状態を直接扱える強力なツール</li>
+                    <li>状態方程式と出力方程式の2つの式で構成される</li>
+                    <li>高階微分方程式から系統的に導出可能</li>
+                    <li>線形性と時不変性は制御理論における重要な性質</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 10px;">
+                <h3>📚 次回予告</h3>
+                <p>次回は、<strong>PID制御</strong>について学びます。古典的ながら産業界で最も広く使用されている制御手法です。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // スライダーの値を表示更新
+        document.getElementById('mass-slider').addEventListener('input', function() {
+            document.getElementById('mass-value').textContent = this.value;
+            updateMatrices();
+        });
+        
+        document.getElementById('spring-slider').addEventListener('input', function() {
+            document.getElementById('spring-value').textContent = this.value;
+            updateMatrices();
+        });
+        
+        document.getElementById('damping-slider').addEventListener('input', function() {
+            document.getElementById('damping-value').textContent = this.value;
+            updateMatrices();
+        });
+
+        document.getElementById('initial-slider').addEventListener('input', function() {
+            document.getElementById('initial-value').textContent = this.value;
+        });
+
+        document.getElementById('a1-slider').addEventListener('input', function() {
+            document.getElementById('a1-value').textContent = this.value;
+        });
+
+        document.getElementById('a0-slider').addEventListener('input', function() {
+            document.getElementById('a0-value').textContent = this.value;
+        });
+
+        document.getElementById('b0-slider').addEventListener('input', function() {
+            document.getElementById('b0-value').textContent = this.value;
+        });
+
+        function updateMatrices() {
+            const m = parseFloat(document.getElementById('mass-slider').value);
+            const k = parseFloat(document.getElementById('spring-slider').value);
+            const c = parseFloat(document.getElementById('damping-slider').value);
+            
+            const a11 = 0;
+            const a12 = 1;
+            const a21 = -k/m;
+            const a22 = -c/m;
+            
+            document.getElementById('matrix-a').textContent = 
+                `A = [\n  ${a11.toFixed(4)}  ${a12.toFixed(4)}\n  ${a21.toFixed(4)}  ${a22.toFixed(4)}\n]`;
+            
+            document.getElementById('matrix-b').textContent = 
+                `B = [\n  0.0000\n  ${(1/m).toFixed(4)}\n]`;
+        }
+
+        function updateSimulation() {
+            const canvas = document.getElementById('simulation-canvas');
+            const ctx = canvas.getContext('2d');
+            const m = parseFloat(document.getElementById('mass-slider').value);
+            const k = parseFloat(document.getElementById('spring-slider').value);
+            const c = parseFloat(document.getElementById('damping-slider').value);
+            const x0 = parseFloat(document.getElementById('initial-slider').value);
+            
+            // クリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 軸の描画
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(50, canvas.height/2);
+            ctx.lineTo(canvas.width - 20, canvas.height/2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(50, 20);
+            ctx.lineTo(50, canvas.height - 20);
+            ctx.stroke();
+            
+            // シミュレーション
+            const dt = 0.01;
+            const tMax = 10;
+            const steps = tMax / dt;
+            
+            let x1 = x0; // 位置
+            let x2 = 0;  // 速度
+            
+            const scaleX = (canvas.width - 70) / tMax;
+            const scaleY = 80;
+            const offsetY = canvas.height / 2;
+            
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < steps; i++) {
+                const t = i * dt;
+                const x = 50 + t * scaleX;
+                const y = offsetY - x1 * scaleY;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                
+                // オイラー法で数値積分
+                const dx1 = x2;
+                const dx2 = -k/m * x1 - c/m * x2;
+                
+                x1 += dx1 * dt;
+                x2 += dx2 * dt;
+            }
+            
+            ctx.stroke();
+            
+            // ラベル
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.fillText('時間 (s)', canvas.width - 60, canvas.height/2 + 20);
+            ctx.fillText('変位 (m)', 10, 30);
+            ctx.fillText('0', 45, canvas.height/2 + 20);
+            ctx.fillText(tMax, canvas.width - 30, canvas.height/2 + 20);
+        }
+
+        function resetSimulation() {
+            document.getElementById('mass-slider').value = 2;
+            document.getElementById('spring-slider').value = 8;
+            document.getElementById('damping-slider').value = 4;
+            document.getElementById('initial-slider').value = 1;
+            
+            document.getElementById('mass-value').textContent = '2.0';
+            document.getElementById('spring-value').textContent = '8.0';
+            document.getElementById('damping-value').textContent = '4.0';
+            document.getElementById('initial-value').textContent = '1.0';
+            
+            updateMatrices();
+            updateSimulation();
+        }
+
+        function updateCanonicalForm() {
+            const a1 = parseFloat(document.getElementById('a1-slider').value);
+            const a0 = parseFloat(document.getElementById('a0-slider').value);
+            const b0 = parseFloat(document.getElementById('b0-slider').value);
+            
+            const result = `A = [\n  0.0000   1.0000\n  ${(-a0).toFixed(4)}  ${(-a1).toFixed(4)}\n]\n\nB = [\n  0.0000\n  ${b0.toFixed(4)}\n]\n\nC = [\n  1.0000   0.0000\n]\n\nD = [0.0000]`;
+            
+            document.getElementById('canonical-result').textContent = result;
+        }
+
+        // 初期化
+        updateMatrices();
+        updateSimulation();
+        updateCanonicalForm();
+    </script>
+</body>
+</html>
