@@ -83,12 +83,158 @@
         .md-link:hover {
             background: #7f8c8d;
         }
+        .navigation-bar {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            margin: -30px -30px 30px -30px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .nav-links a:hover {
+            background: #2c3e50;
+        }
+        .progress-section {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #bdc3c7;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .course-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 8px 15px;
+            border: none;
+            background: #ecf0f1;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
+        .lecture-card.completed {
+            border-left: 5px solid #2ecc71;
+        }
+        .lecture-card.in-progress {
+            border-left: 5px solid #f39c12;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>制御理論講義</h1>
-        <div class="lecture-grid">
+        <div class="navigation-bar">
+            <h2 style="margin: 0;">制御理論講義ダッシュボード</h2>
+            <div class="nav-links">
+                <a href="#progress">進捗</a>
+                <a href="#lectures">講義一覧</a>
+                <a href="https://github.com/lutelute/control_course_genspark" target="_blank">GitHub</a>
+            </div>
+        </div>
+        
+        <div class="progress-section" id="progress">
+            <h3>学習進捗</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <div class="course-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="completedCount">0</div>
+                    <div class="stat-label">完了済み</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="inProgressCount">0</div>
+                    <div class="stat-label">学習中</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">16</div>
+                    <div class="stat-label">総講義数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="progressPercent">0%</div>
+                    <div class="stat-label">完了率</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="lectures">
+            <input type="text" class="search-box" id="searchBox" placeholder="講義を検索...">
+            
+            <div class="category-filter">
+                <button class="filter-btn active" onclick="filterLectures('all')">すべて</button>
+                <button class="filter-btn" onclick="filterLectures('基礎編')">基礎編 (1-5回)</button>
+                <button class="filter-btn" onclick="filterLectures('解析編')">解析編 (6-9回)</button>
+                <button class="filter-btn" onclick="filterLectures('制御設計編')">制御設計編 (10-12回)</button>
+                <button class="filter-btn" onclick="filterLectures('応用編')">応用編 (13-16回)</button>
+            </div>
+
+            <h1>制御理論講義</h1>
+            <div class="lecture-grid">
             <div class="lecture-card">
                 <div class="lecture-number">第01回</div>
                 <div class="lecture-title">システムの状態空間表現</div>
@@ -218,6 +364,198 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
+
+    <script>
+        // 学習進捗管理
+        const lectureData = [
+            {id: 1, title: "システムの状態空間表現", category: "基礎編"},
+            {id: 2, title: "PID制御", category: "基礎編"},
+            {id: 3, title: "状態方程式の解", category: "基礎編"},
+            {id: 4, title: "遷移行列の計算", category: "基礎編"},
+            {id: 5, title: "伝達関数と状態空間表現", category: "基礎編"},
+            {id: 6, title: "安定性と極", category: "解析編"},
+            {id: 7, title: "リアプノフ方程式", category: "解析編"},
+            {id: 8, title: "可制御性", category: "解析編"},
+            {id: 9, title: "可観測性", category: "解析編"},
+            {id: 10, title: "状態フィードバックと極配置", category: "制御設計編"},
+            {id: 11, title: "オブザーバ", category: "制御設計編"},
+            {id: 12, title: "最適レギュレータ", category: "制御設計編"},
+            {id: 13, title: "リッカチ方程式と最適性", category: "応用編"},
+            {id: 14, title: "カルマンフィルタ", category: "応用編"},
+            {id: 15, title: "サーボシステム", category: "応用編"},
+            {id: 16, title: "まとめ", category: "応用編"}
+        ];
+
+        // ローカルストレージから進捗を読み込み
+        function loadProgress() {
+            const progress = JSON.parse(localStorage.getItem('lectureProgress') || '{}');
+            return progress;
+        }
+
+        // 進捗をローカルストレージに保存
+        function saveProgress(progress) {
+            localStorage.setItem('lectureProgress', JSON.stringify(progress));
+        }
+
+        // 進捗統計を更新
+        function updateStats() {
+            const progress = loadProgress();
+            const completed = Object.values(progress).filter(status => status === 'completed').length;
+            const inProgress = Object.values(progress).filter(status => status === 'in-progress').length;
+            const percentage = Math.round((completed / 16) * 100);
+
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('inProgressCount').textContent = inProgress;
+            document.getElementById('progressPercent').textContent = percentage + '%';
+            document.getElementById('progressBar').style.width = percentage + '%';
+
+            // 講義カードに進捗状態を反映
+            lectureData.forEach(lecture => {
+                const card = document.querySelector(`[data-lecture-id="${lecture.id}"]`);
+                if (card) {
+                    card.className = 'lecture-card';
+                    if (progress[lecture.id] === 'completed') {
+                        card.classList.add('completed');
+                    } else if (progress[lecture.id] === 'in-progress') {
+                        card.classList.add('in-progress');
+                    }
+                }
+            });
+        }
+
+        // 講義カードをクリックしたときの処理
+        function markAsInProgress(lectureId) {
+            const progress = loadProgress();
+            if (!progress[lectureId]) {
+                progress[lectureId] = 'in-progress';
+                saveProgress(progress);
+                updateStats();
+            }
+        }
+
+        // 講義カードの右クリックメニュー
+        function addContextMenu() {
+            document.querySelectorAll('.lecture-card').forEach(card => {
+                const lectureId = parseInt(card.dataset.lectureId);
+                
+                card.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    const progress = loadProgress();
+                    const currentStatus = progress[lectureId] || 'not-started';
+                    
+                    const menu = document.createElement('div');
+                    menu.style.cssText = `
+                        position: fixed;
+                        top: ${e.clientY}px;
+                        left: ${e.clientX}px;
+                        background: white;
+                        border: 1px solid #ddd;
+                        border-radius: 5px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        z-index: 1000;
+                        padding: 5px 0;
+                    `;
+                    
+                    const options = [
+                        {text: '未開始', value: null},
+                        {text: '学習中', value: 'in-progress'},
+                        {text: '完了', value: 'completed'}
+                    ];
+                    
+                    options.forEach(option => {
+                        const item = document.createElement('div');
+                        item.textContent = option.text;
+                        item.style.cssText = `
+                            padding: 8px 15px;
+                            cursor: pointer;
+                            background: ${progress[lectureId] === option.value ? '#3498db' : 'white'};
+                            color: ${progress[lectureId] === option.value ? 'white' : 'black'};
+                        `;
+                        item.addEventListener('mouseenter', () => item.style.background = progress[lectureId] === option.value ? '#2980b9' : '#ecf0f1');
+                        item.addEventListener('mouseleave', () => item.style.background = progress[lectureId] === option.value ? '#3498db' : 'white');
+                        item.addEventListener('click', () => {
+                            if (option.value === null) {
+                                delete progress[lectureId];
+                            } else {
+                                progress[lectureId] = option.value;
+                            }
+                            saveProgress(progress);
+                            updateStats();
+                            document.body.removeChild(menu);
+                        });
+                        menu.appendChild(item);
+                    });
+                    
+                    document.body.appendChild(menu);
+                    
+                    setTimeout(() => {
+                        document.addEventListener('click', function removeMenu() {
+                            if (document.body.contains(menu)) {
+                                document.body.removeChild(menu);
+                            }
+                            document.removeEventListener('click', removeMenu);
+                        });
+                    }, 100);
+                });
+                
+                // 通常のクリックで学習中に設定
+                card.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'A') {
+                        markAsInProgress(lectureId);
+                    }
+                });
+            });
+        }
+
+        // 検索機能
+        function setupSearch() {
+            const searchBox = document.getElementById('searchBox');
+            searchBox.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                document.querySelectorAll('.lecture-card').forEach(card => {
+                    const title = card.querySelector('.lecture-title').textContent.toLowerCase();
+                    if (title.includes(query)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // カテゴリフィルター
+        function filterLectures(category) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.lecture-card').forEach(card => {
+                const lectureId = parseInt(card.dataset.lectureId);
+                const lectureCategory = lectureData.find(l => l.id === lectureId)?.category;
+                
+                if (category === 'all' || lectureCategory === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // データ属性を講義カードに追加
+        function addDataAttributes() {
+            document.querySelectorAll('.lecture-card').forEach((card, index) => {
+                card.setAttribute('data-lecture-id', index + 1);
+            });
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            addDataAttributes();
+            updateStats();
+            addContextMenu();
+            setupSearch();
+        });
+    </script>
 </body>
 </html>
