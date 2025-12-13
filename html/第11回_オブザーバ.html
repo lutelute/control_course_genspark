@@ -180,12 +180,35 @@
 
 <div class="step-box">
 <p><strong>補正のメカニズム：</strong></p>
-<pre>
-実システム：   ẋ = Ax + Bu  →  y = Cx
-模擬システム：  ẋ̂ = Ax̂ + Bu  →  ŷ = Cx̂
-                      ↓
-               補正項：L(y - ŷ)
-</pre>
+
+<table style="width: 100%; border-collapse: collapse; margin: 15px 0; text-align: center;">
+<tr>
+<td style="padding: 10px; border: none;">
+実システム：<br>
+$\dot{\mathbf{x}} = \mathbf{A}\mathbf{x} + \mathbf{B}\mathbf{u}$
+</td>
+<td style="padding: 10px; border: none;">→</td>
+<td style="padding: 10px; border: none;">
+$\mathbf{y} = \mathbf{C}\mathbf{x}$
+</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: none;">
+模擬システム：<br>
+$\dot{\hat{\mathbf{x}}} = \mathbf{A}\hat{\mathbf{x}} + \mathbf{B}\mathbf{u}$
+</td>
+<td style="padding: 10px; border: none;">→</td>
+<td style="padding: 10px; border: none;">
+$\hat{\mathbf{y}} = \mathbf{C}\hat{\mathbf{x}}$
+</td>
+</tr>
+<tr>
+<td style="padding: 20px 10px 10px 10px; border: none;" colspan="3">
+↓<br>
+<strong>補正項：</strong> $\mathbf{L}(\mathbf{y} - \hat{\mathbf{y}})$
+</td>
+</tr>
+</table>
 </div>
 
 <p>模擬システムの出力 $\hat{\mathbf{y}} = \mathbf{C}\hat{\mathbf{x}}$ と実システムの出力 $\mathbf{y} = \mathbf{C}\mathbf{x}$ に差がある場合、これは推定に誤差があることを意味します。</p>
@@ -264,10 +287,8 @@
 
 <div class="step-box">
 <p><strong>Step 1: 実システムと推定システムの方程式</strong></p>
-<pre>
-実システム：    ẋ = Ax + Bu
-推定システム：   x̂̇ = Ax̂ + Bu + L(y - ŷ)
-</pre>
+<p>実システム： $\dot{\mathbf{x}} = \mathbf{A}\mathbf{x} + \mathbf{B}\mathbf{u}$</p>
+<p>推定システム： $\dot{\hat{\mathbf{x}}} = \mathbf{A}\hat{\mathbf{x}} + \mathbf{B}\mathbf{u} + \mathbf{L}(\mathbf{y} - \hat{\mathbf{y}})$</p>
 </div>
 
 <div class="step-box">
