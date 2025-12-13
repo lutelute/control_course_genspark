@@ -6,662 +6,1484 @@
     <title>第2回：PID制御</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']]
         }
+      };
+    </script>
+    <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.8;
-            color: #333;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            line-height: 1.6;
+            margin: 0;
             padding: 20px;
+            background-color: #f5f5f5;
         }
         .container {
             max-width: 1000px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        header {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
             padding: 40px;
-            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-        .content {
-            padding: 40px;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
         }
         h2 {
-            color: #f5576c;
+            color: #34495e;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 5px;
             margin-top: 30px;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #f5576c;
         }
         h3 {
-            color: #f093fb;
+            color: #2c3e50;
             margin-top: 25px;
-            margin-bottom: 10px;
         }
-        .highlight-box {
-            background: #fff0f5;
-            border-left: 5px solid #f5576c;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 5px;
+        h4 {
+            color: #34495e;
+            margin-top: 20px;
         }
-        .interactive-demo {
-            background: #f0f8ff;
-            border: 2px solid #4169e1;
-            padding: 25px;
-            margin: 25px 0;
-            border-radius: 10px;
-        }
-        .pid-controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .control-box {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .control-box h4 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-        button {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        .nav-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #3498db;
             color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 1em;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin: 10px 5px;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
-        }
-        .slider-container {
-            margin: 15px 0;
-        }
-        input[type="range"] {
-            width: 100%;
-            margin: 10px 0;
-        }
-        canvas {
-            border: 2px solid #ddd;
+            padding: 10px 15px;
+            text-decoration: none;
             border-radius: 5px;
-            display: block;
-            margin: 20px auto;
-            background: white;
+            z-index: 1000;
         }
-        .value-display {
-            font-family: 'Courier New', monospace;
-            background: #263238;
-            color: #aed581;
+        .nav-link:hover {
+            background: #2980b9;
+        }
+        .motivation-box {
+            background: #e8f6f3;
+            padding: 20px;
+            border-left: 4px solid #16a085;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .important-note {
+            background: #fef5e7;
             padding: 15px;
+            border-left: 4px solid #f39c12;
+            margin: 20px 0;
             border-radius: 5px;
-            margin: 15px 0;
-            font-size: 0.9em;
         }
-        table {
+        .step-box {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 3px solid #3498db;
+        }
+        .theory-box {
+            background: #e8f4f8;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .example-box {
+            background: #f0f8ff;
+            padding: 20px;
+            border: 2px solid #4169e1;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .daily-life-box {
+            background: #f0fff0;
+            padding: 20px;
+            border: 2px solid #32cd32;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .troubleshooting-box {
+            background: #fff0f5;
+            padding: 20px;
+            border: 2px solid #ff69b4;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .tuning-table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
         }
-        th, td {
+        .tuning-table th, .tuning-table td {
             border: 1px solid #ddd;
             padding: 12px;
             text-align: center;
         }
-        th {
-            background: #f093fb;
+        .tuning-table th {
+            background-color: #3498db;
             color: white;
         }
-        tr:nth-child(even) {
-            background: #f9f9f9;
-        }
-        .formula {
-            background: #f9f9f9;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 5px;
-            overflow-x: auto;
+        .tuning-table tr:nth-child(even) {
+            background-color: #f2f2f2;
         }
         ul {
-            margin-left: 30px;
-            margin-top: 10px;
+            padding-left: 20px;
         }
         li {
             margin: 8px 0;
         }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
         }
-        .info-card {
-            background: #fff;
-            border: 2px solid #f093fb;
-            border-radius: 8px;
+        .positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        pre {
+            background: #f8f9fa;
             padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 3px solid #3498db;
         }
-        .info-card h4 {
-            color: #f5576c;
-            margin-bottom: 8px;
+        code {
+            background: #f1f2f6;
+            padding: 2px 4px;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
+    <a href="../index.html" class="nav-link">← ダッシュボードに戻る</a>
     <div class="container">
-        <header>
-            <h1>🎛️ 第2回：PID制御</h1>
-            <p class="subtitle">Proportional-Integral-Derivative Control</p>
-        </header>
-        
-        <div class="content">
-            <div class="highlight-box">
-                <h3>🎯 学習目標</h3>
-                <ul>
-                    <li>PID制御の基本原理と各要素の役割を理解する</li>
-                    <li>比例（P）、積分（I）、微分（D）動作の特性を把握する</li>
-                    <li>PIDパラメータの調整方法を学ぶ</li>
-                </ul>
-            </div>
 
-            <h2>1. PID制御の基本構造</h2>
-            
-            <div class="formula">
-                <h3>PID制御則</h3>
-                <p>$$u(t) = K_p e(t) + K_i \int_0^t e(\tau) d\tau + K_d \frac{de(t)}{dt}$$</p>
-                <p>各項の意味：</p>
-                <ul>
-                    <li>\(u_P(t) = K_p e(t)\)：比例動作（P動作）</li>
-                    <li>\(u_I(t) = K_i \int_0^t e(\tau) d\tau\)：積分動作（I動作）</li>
-                    <li>\(u_D(t) = K_d \frac{de(t)}{dt}\)：微分動作（D動作）</li>
-                </ul>
-            </div>
+<h1>第2回：PID制御</h1>
 
-            <h2>2. インタラクティブPIDシミュレータ</h2>
-            
-            <div class="interactive-demo">
-                <h3>🔧 PIDパラメータ調整</h3>
-                
-                <div class="pid-controls">
-                    <div class="control-box">
-                        <h4>比例ゲイン (Kp)</h4>
-                        <input type="range" id="kp-slider" min="0" max="5" step="0.1" value="1">
-                        <div style="text-align: center;">
-                            <strong id="kp-value">1.0</strong>
-                        </div>
-                    </div>
-                    
-                    <div class="control-box">
-                        <h4>積分ゲイン (Ki)</h4>
-                        <input type="range" id="ki-slider" min="0" max="2" step="0.05" value="0.5">
-                        <div style="text-align: center;">
-                            <strong id="ki-value">0.5</strong>
-                        </div>
-                    </div>
-                    
-                    <div class="control-box">
-                        <h4>微分ゲイン (Kd)</h4>
-                        <input type="range" id="kd-slider" min="0" max="2" step="0.05" value="0.2">
-                        <div style="text-align: center;">
-                            <strong id="kd-value">0.2</strong>
-                        </div>
-                    </div>
-                </div>
+<h2>学習目標</h2>
+<ul>
+<li>PID制御の基本原理と各要素の役割を理解する</li>
+<li>比例（P）、積分（I）、微分（D）動作の特性を把握する</li>
+<li>PIDパラメータの調整方法を学ぶ</li>
+<li>実際の制御問題でのPID制御の適用方法を習得する</li>
+</ul>
 
-                <div class="slider-container">
-                    <label><strong>目標値:</strong> <span id="setpoint-value">1.0</span></label>
-                    <input type="range" id="setpoint-slider" min="0.5" max="2" step="0.1" value="1">
-                </div>
-                
-                <div style="text-align: center; margin: 20px 0;">
-                    <button onclick="runPIDSimulation()">シミュレーション実行</button>
-                    <button onclick="resetPID()">リセット</button>
-                    <button onclick="loadPreset('p')">P制御のみ</button>
-                    <button onclick="loadPreset('pi')">PI制御</button>
-                    <button onclick="loadPreset('pid')">PID制御</button>
-                </div>
-                
-                <canvas id="pid-canvas" width="900" height="400"></canvas>
-                
-                <div class="value-display">
-                    <div id="performance-metrics"></div>
-                </div>
-            </div>
+<h2>1. はじめに：なぜPID制御なのか？</h2>
 
-            <h2>3. 各動作の特性比較</h2>
-            
-            <div class="info-grid">
-                <div class="info-card">
-                    <h4>⚡ 比例動作（P動作）</h4>
-                    <ul style="margin-left: 20px; font-size: 0.9em;">
-                        <li>応答が速い</li>
-                        <li>実装が簡単</li>
-                        <li>残留偏差が残る</li>
-                        <li>ゲイン大→振動的</li>
-                    </ul>
-                </div>
-                
-                <div class="info-card">
-                    <h4>∫ 積分動作（I動作）</h4>
-                    <ul style="margin-left: 20px; font-size: 0.9em;">
-                        <li>定常偏差を除去</li>
-                        <li>応答が遅くなる</li>
-                        <li>積分飽和に注意</li>
-                        <li>安定性低下の恐れ</li>
-                    </ul>
-                </div>
-                
-                <div class="info-card">
-                    <h4>d/dt 微分動作（D動作）</h4>
-                    <ul style="margin-left: 20px; font-size: 0.9em;">
-                        <li>予測的制御</li>
-                        <li>オーバーシュート抑制</li>
-                        <li>ノイズに敏感</li>
-                        <li>安定性向上</li>
-                    </ul>
-                </div>
-                
-                <div class="info-card">
-                    <h4>🎯 PID統合</h4>
-                    <ul style="margin-left: 20px; font-size: 0.9em;">
-                        <li>各動作の長所を活用</li>
-                        <li>高性能な制御</li>
-                        <li>調整が必要</li>
-                        <li>産業界で標準的</li>
-                    </ul>
-                </div>
-            </div>
+<h3>1.1 日常生活のフィードバック制御</h3>
 
-            <h2>4. Ziegler-Nichols調整法</h2>
-            
-            <h3>限界感度法</h3>
-            <table>
-                <tr>
-                    <th>制御器タイプ</th>
-                    <th>Kp</th>
-                    <th>Ti</th>
-                    <th>Td</th>
-                </tr>
-                <tr>
-                    <td>P</td>
-                    <td>0.5 Ku</td>
-                    <td>∞</td>
-                    <td>0</td>
-                </tr>
-                <tr>
-                    <td>PI</td>
-                    <td>0.45 Ku</td>
-                    <td>Tu/1.2</td>
-                    <td>0</td>
-                </tr>
-                <tr>
-                    <td>PID</td>
-                    <td>0.6 Ku</td>
-                    <td>Tu/2</td>
-                    <td>Tu/8</td>
-                </tr>
-            </table>
+<div class="daily-life-box">
+<p>私たちは日常生活で無意識にフィードバック制御を行っています：</p>
 
-            <h3>パラメータ調整の影響</h3>
-            <table>
-                <tr>
-                    <th>パラメータ増加</th>
-                    <th>立ち上がり時間</th>
-                    <th>オーバーシュート</th>
-                    <th>整定時間</th>
-                    <th>定常偏差</th>
-                </tr>
-                <tr>
-                    <td>Kp</td>
-                    <td>↓ 減少</td>
-                    <td>↑ 増加</td>
-                    <td>小変化</td>
-                    <td>↓ 減少</td>
-                </tr>
-                <tr>
-                    <td>Ki</td>
-                    <td>↓ 減少</td>
-                    <td>↑ 増加</td>
-                    <td>↑ 増加</td>
-                    <td>★ 除去</td>
-                </tr>
-                <tr>
-                    <td>Kd</td>
-                    <td>小変化</td>
-                    <td>↓ 減少</td>
-                    <td>↓ 減少</td>
-                    <td>小変化</td>
-                </tr>
-            </table>
+<p><strong>例1：お風呂の温度調整</strong></p>
+<ul>
+<li>目標：40℃のお湯</li>
+<li>現在：38℃のお湯（偏差 = -2℃）</li>
+<li>行動：熱湯を追加（制御入力）</li>
+</ul>
 
-            <h2>5. 実装上の問題と対策</h2>
-            
-            <div class="interactive-demo">
-                <h3>💡 積分飽和（Integral Windup）デモ</h3>
-                <p>大きな偏差が長時間続くと積分項が過大に蓄積し、大きなオーバーシュートが発生します。</p>
-                
-                <div style="text-align: center; margin: 20px 0;">
-                    <button onclick="demonstrateWindup(false)">通常のPI制御</button>
-                    <button onclick="demonstrateWindup(true)">アンチワインドアップ付き</button>
-                </div>
-                
-                <canvas id="windup-canvas" width="900" height="300"></canvas>
-            </div>
+<p><strong>例2：自動車の運転</strong></p>
+<ul>
+<li>目標：車線の中央</li>
+<li>現在：右側にずれている（偏差）</li>
+<li>行動：ハンドルを左に切る（制御入力）</li>
+</ul>
 
-            <div class="highlight-box">
-                <h3>🛡️ 主な対策</h3>
-                <ul>
-                    <li><strong>積分飽和対策:</strong> アンチワインドアップ機構、積分項の上下限設定</li>
-                    <li><strong>微分キック対策:</strong> 出力の微分を使用、微分フィルタの導入</li>
-                    <li><strong>ノイズ対策:</strong> ローパスフィルタ、不完全微分の使用</li>
-                </ul>
-            </div>
+<p>これらの自然な行動パターンがPID制御の基本原理と同じです。</p>
+</div>
 
-            <h2>6. まとめ</h2>
-            <div class="highlight-box">
-                <ul>
-                    <li>PID制御は3つの基本動作（P, I, D）の組み合わせ</li>
-                    <li>P動作：応答の速さ、I動作：定常偏差の除去、D動作：安定性の向上</li>
-                    <li>パラメータ調整にはZiegler-Nichols法などの体系的手法がある</li>
-                    <li>積分飽和や微分キックなどの問題に対する対策が重要</li>
-                </ul>
-            </div>
-        </div>
+<h3>1.2 PID制御が普及している理由</h3>
+
+<p><strong>PID制御</strong>（Proportional-Integral-Derivative Control）は、産業界で最も広く使用されている制御手法です。統計によると、産業用制御器の<strong>90%以上</strong>がPID制御ベースとされています。</p>
+
+<div class="motivation-box">
+<p><strong>普及の理由：</strong></p>
+<ul>
+<li><strong>直感的理解</strong>：人間の制御行動パターンに近い</li>
+<li><strong>シンプル構造</strong>：3つのパラメータのみで制御</li>
+<li><strong>実証された性能</strong>：多くの実用システムで良好な結果</li>
+<li><strong>実装の容易さ</strong>：アナログ回路でも簡単に実現可能</li>
+<li><strong>コスト効果</strong>：高価な解析不要で実用的性能を達成</li>
+</ul>
+</div>
+
+<h3>1.3 PID制御の本質</h3>
+
+<div class="theory-box">
+<p>PID制御の本質は<strong>「過去・現在・未来」</strong>への同時対応：</p>
+<ul>
+<li><strong>現在の状況</strong>に対する即座の反応（<strong>P</strong>：比例）</li>
+<li><strong>過去の蓄積</strong>への継続的な補正（<strong>I</strong>：積分）</li>
+<li><strong>未来の予測</strong>による先読み制御（<strong>D</strong>：微分）</li>
+</ul>
+</div>
+
+<h2>2. PID制御の基本構造</h2>
+
+<h3>2.1 フィードバック制御の基本概念</h3>
+
+<p>まず、フィードバック制御の基本的な仕組みを理解しましょう。</p>
+
+<div class="step-box">
+<p><strong>フィードバック制御の原理：</strong></p>
+<ol>
+<li><strong>目標値を設定</strong>する</li>
+<li><strong>現在の状態を測定</strong>する</li>
+<li><strong>偏差（差）を計算</strong>する：偏差 = 目標値 - 現在値</li>
+<li><strong>偏差に基づいて制御入力を決定</strong>する</li>
+<li><strong>システムに制御入力を適用</strong>する</li>
+<li><strong>結果を観測</strong>して1に戻る</li>
+</ol>
+</div>
+
+<h3>2.2 制御系の構成と用語</h3>
+
+<pre>
+目標値      偏差        制御入力              出力
+r(t) ─→ (+) ─→ [ PID制御器 ] ─→ u(t) ─→ [ プラント ] ─→ y(t)
+        ↑ -                                                │
+        └─────────────── フィードバック ────────────────────┘
+</pre>
+
+<div class="important-note">
+<p><strong>各要素の詳細説明：</strong></p>
+
+<ul>
+<li><strong>$r(t)$（目標値、Reference）</strong>：
+  <ul>
+    <li>制御したい値（例：温度40℃、速度60km/h）</li>
+    <li>「こうなって欲しい」という理想値</li>
+  </ul>
+</li>
+  
+<li><strong>$y(t)$（出力、Output）</strong>：
+  <ul>
+    <li>実際に測定される値</li>
+    <li>センサで観測される現在の状態</li>
+  </ul>
+</li>
+  
+<li><strong>$e(t)$（偏差、Error）</strong>：
+  <ul>
+    <li>$e(t) = r(t) - y(t)$</li>
+    <li>目標と現実のギャップ</li>
+    <li>この偏差をゼロにするのがPID制御の目的</li>
+  </ul>
+</li>
+  
+<li><strong>$u(t)$（制御入力、Control Input）</strong>：
+  <ul>
+    <li>システムに加える操作量</li>
+    <li>例：ヒーターの電力、モータの電圧</li>
+  </ul>
+</li>
+  
+<li><strong>プラント（Plant）</strong>：
+  <ul>
+    <li>制御対象となるシステム</li>
+    <li>例：温度制御なら加熱装置とタンク</li>
+  </ul>
+</li>
+</ul>
+</div>
+
+<h3>2.3 PID制御則の数学的表現</h3>
+
+<h4>基本形（並列形）</h4>
+
+<div class="theory-box">
+<p>PID制御器の出力は以下の式で表されます：</p>
+
+<p>$$u(t) = K_p e(t) + K_i \int_0^t e(\tau) d\tau + K_d \frac{de(t)}{dt}$$</p>
+
+<p>これを3つの項に分解すると：</p>
+
+<p>$$u(t) = u_P(t) + u_I(t) + u_D(t)$$</p>
+</div>
+
+<div class="important-note">
+<p><strong>各項の意味：</strong></p>
+<ul>
+<li><strong>$u_P(t) = K_p e(t)$</strong>：<strong>比例項</strong>（P動作）
+  <ul>
+    <li>現在の偏差に比例した制御</li>
+    <li>偏差が大きいほど強く制御</li>
+  </ul>
+</li>
+  
+<li><strong>$u_I(t) = K_i \int_0^t e(\tau) d\tau$</strong>：<strong>積分項</strong>（I動作）
+  <ul>
+    <li>過去の偏差の累積に比例した制御</li>
+    <li>持続的な偏差を解消</li>
+  </ul>
+</li>
+  
+<li><strong>$u_D(t) = K_d \frac{de(t)}{dt}$</strong>：<strong>微分項</strong>（D動作）
+  <ul>
+    <li>偏差の変化率に比例した制御</li>
+    <li>急激な変化を予測して対応</li>
+  </ul>
+</li>
+</ul>
+</div>
+
+<h4>なぜこの3つなのか？</h4>
+
+<div class="motivation-box">
+<p><strong>時間的な観点から：</strong></p>
+<ul>
+<li><strong>P項</strong>：<strong>現在</strong>の状況への対応</li>
+<li><strong>I項</strong>：<strong>過去</strong>の蓄積への対応</li>
+<li><strong>D項</strong>：<strong>未来</strong>の変化への対応</li>
+</ul>
+
+<p>この組み合わせにより、時間軸全体にわたって最適な制御を実現します。</p>
+</div>
+
+<h3>2.4 標準形と並列形</h3>
+
+<div class="theory-box">
+<p><strong>標準形（直列形、ISA形式）：</strong></p>
+<p>$$u(t) = K_p \left[ e(t) + \frac{1}{T_i}\int_0^t e(\tau) d\tau + T_d \frac{de(t)}{dt} \right]$$</p>
+
+<ul>
+<li>$K_p$：比例ゲイン</li>
+<li>$T_i$：積分時間</li>
+<li>$T_d$：微分時間</li>
+</ul>
+
+<p><strong>並列形：</strong></p>
+<p>$$u(t) = K_p e(t) + K_i \int_0^t e(\tau) d\tau + K_d \frac{de(t)}{dt}$$</p>
+
+<p>変換関係：</p>
+<ul>
+<li>$K_i = K_p / T_i$</li>
+<li>$K_d = K_p \cdot T_d$</li>
+</ul>
+</div>
+
+<h2>3. 各要素の役割と特性：詳細解説</h2>
+
+<h3>3.1 比例動作（P動作）：「現在への対応」</h3>
+
+<h4>3.1.1 基本概念</h4>
+
+<p><strong>比例動作</strong>は、現在の偏差に<strong>直接比例</strong>した制御を行います。</p>
+
+<div class="theory-box">
+<p><strong>制御則：</strong></p>
+<p>$$u_P(t) = K_p e(t)$$</p>
+</div>
+
+<div class="daily-life-box">
+<p><strong>日常生活の例：</strong></p>
+<ul>
+<li><strong>お風呂の温度調整</strong>：「2℃低い」→「強めに熱湯を入れる」</li>
+<li><strong>車の運転</strong>：「大きく右にずれた」→「大きく左にハンドルを切る」</li>
+</ul>
+</div>
+
+<h4>3.1.2 $K_p$（比例ゲイン）の効果</h4>
+
+<div class="important-note">
+<p><strong>$K_p$の物理的意味：</strong></p>
+<ul>
+<li>$K_p$ = 「1単位の偏差に対してどれだけ強く制御するか」</li>
+<li>単位：[制御入力の単位]/[偏差の単位]</li>
+</ul>
+
+<p><strong>$K_p$を大きくした場合：</strong></p>
+<ul>
+<li><span class="positive">✅ 応答が速い</span>：偏差に対して強く反応</li>
+<li><span class="positive">✅ 立ち上がり時間の短縮</span></li>
+<li><span class="negative">❌ オーバーシュート増加</span>：行き過ぎが発生</li>
+<li><span class="negative">❌ 振動しやすい</span>：過敏な反応</li>
+</ul>
+
+<p><strong>$K_p$を小さくした場合：</strong></p>
+<ul>
+<li><span class="positive">✅ 安定性向上</span>：振動が少ない</li>
+<li><span class="positive">✅ 滑らかな応答</span></li>
+<li><span class="negative">❌ 応答が遅い</span>：目標値到達に時間がかかる</li>
+<li><span class="negative">❌ 残留偏差が大きい</span>：完全に目標に到達しない</li>
+</ul>
+</div>
+
+<h4>3.1.3 P動作だけの問題点</h4>
+
+<div class="step-box">
+<p><strong>残留偏差（定常偏差）の発生：</strong></p>
+
+<p>なぜ残留偏差が残るのか？定常状態を考えてみましょう：</p>
+<ul>
+<li>定常状態では $u_P = K_p e_{ss}$ （一定値）</li>
+<li>システムを駆動するには制御入力が必要</li>
+<li>したがって $e_{ss} \neq 0$ となる</li>
+</ul>
+
+<p><strong>具体例：</strong></p>
+<p>温度制御で外気温度が変化した場合、新しい平衡点で偏差が残る。</p>
+</div>
+
+<h3>3.2 積分動作（I動作）：「過去への対応」</h3>
+
+<h4>3.2.1 基本概念</h4>
+
+<p><strong>積分動作</strong>は、過去の偏差の<strong>蓄積</strong>に基づいて制御を行います。</p>
+
+<div class="theory-box">
+<p><strong>制御則：</strong></p>
+<p>$$u_I(t) = K_i \int_0^t e(\tau) d\tau$$</p>
+</div>
+
+<div class="daily-life-box">
+<p><strong>物理的イメージ：</strong></p>
+<ul>
+<li>偏差が持続すると、その「借金」がどんどん累積</li>
+<li>この借金を返済するために制御出力を増加</li>
+<li>借金がゼロ（偏差の積分がゼロ）になるまで動作継続</li>
+</ul>
+
+<p><strong>日常生活の例：</strong></p>
+<ul>
+<li><strong>貯金</strong>：毎月少しずつでも貯金すれば、いずれ大きな金額になる</li>
+<li><strong>勉強</strong>：毎日少しずつでも積み重ねれば、大きな力になる</li>
+</ul>
+</div>
+
+<h4>3.2.2 積分項の役割</h4>
+
+<div class="step-box">
+<p><strong>定常偏差の完全除去：</strong></p>
+
+<p>なぜ積分項で定常偏差がゼロになるのか？</p>
+
+<p>定常状態では：</p>
+<ul>
+<li>$u_I(t) = K_i \int_0^t e(\tau) d\tau$ = 一定値</li>
+<li>これが成り立つためには $e(t) = 0$ でなければならない</li>
+<li>なぜなら、$e(t) \neq 0$ なら積分値は増加し続けるから</li>
+</ul>
+</div>
+
+<h4>3.2.3 $K_i$（積分ゲイン）の効果</h4>
+
+<div class="important-note">
+<p><strong>$K_i$の物理的意味：</strong></p>
+<ul>
+<li>「偏差の蓄積にどれだけ敏感に反応するか」</li>
+<li>大きいほど積分の効果が強い</li>
+</ul>
+
+<p><strong>$K_i$を大きくした場合：</strong></p>
+<ul>
+<li><span class="positive">✅ 定常偏差除去が速い</span></li>
+<li><span class="negative">❌ オーバーシュート増加</span></li>
+<li><span class="negative">❌ 振動しやすい</span></li>
+<li><span class="negative">❌ 積分飽和のリスク</span></li>
+</ul>
+
+<p><strong>$K_i$を小さくした場合：</strong></p>
+<ul>
+<li><span class="positive">✅ 安定性向上</span></li>
+<li><span class="negative">❌ 定常偏差除去が遅い</span></li>
+</ul>
+</div>
+
+<h4>3.2.4 積分飽和（Integral Windup）問題</h4>
+
+<div class="troubleshooting-box">
+<p><strong>積分飽和とは：</strong></p>
+<p>制御出力に上下限がある場合、積分項が過大になって制御性能が悪化する現象。</p>
+
+<p><strong>発生メカニズム：</strong></p>
+<ol>
+<li>大きな目標値変化や外乱が発生</li>
+<li>制御出力が飽和（上限または下限に張り付き）</li>
+<li>しかし偏差は残るので積分項が増加し続ける</li>
+<li>偏差がゼロになっても積分項が大きいままで過渡特性が悪化</li>
+</ol>
+
+<p><strong>対策：</strong></p>
+<ul>
+<li>アンチワインドアップ機構の実装</li>
+<li>積分項に上下限を設ける</li>
+</ul>
+</div>
+
+<h3>3.3 微分動作（D動作）：「未来への対応」</h3>
+
+<h4>3.3.1 基本概念</h4>
+
+<p><strong>微分動作</strong>は、偏差の<strong>変化速度</strong>に基づいて制御を行います。</p>
+
+<div class="theory-box">
+<p><strong>制御則：</strong></p>
+<p>$$u_D(t) = K_d \frac{de(t)}{dt}$$</p>
+</div>
+
+<div class="daily-life-box">
+<p><strong>物理的イメージ：</strong></p>
+<ul>
+<li>偏差が急激に変化しそうになると、それを予測して先回り</li>
+<li>「このままだと大きくずれそう」→「早めに対処」</li>
+</ul>
+
+<p><strong>日常生活の例：</strong></p>
+<ul>
+<li><strong>ブレーキ</strong>：前の車が近づいてくる速度を見て、早めにブレーキ</li>
+<li><strong>投資</strong>：株価の変化の勢いを見て、早めに売買判断</li>
+</ul>
+</div>
+
+<h4>3.3.2 微分項の効果</h4>
+
+<div class="step-box">
+<p><strong>予測制御の実現：</strong></p>
+
+<p>なぜ微分項で予測ができるのか？</p>
+
+<p>偏差の変化率 $\frac{de(t)}{dt}$ は：</p>
+<ul>
+<li>正：偏差が増加中（状況が悪化）</li>
+<li>負：偏差が減少中（状況が改善）</li>
+<li>ゼロ：偏差が一定（変化なし）</li>
+</ul>
+
+<p>この情報を使って、偏差が大きくなる前に制御を強化。</p>
+</div>
+
+<h4>3.3.3 $K_d$（微分ゲイン）の効果</h4>
+
+<div class="important-note">
+<p><strong>$K_d$を大きくした場合：</strong></p>
+<ul>
+<li><span class="positive">✅ オーバーシュート抑制</span>：行き過ぎを予測して抑制</li>
+<li><span class="positive">✅ 応答の改善</span>：素早い立ち上がりと安定化の両立</li>
+<li><span class="negative">❌ ノイズに敏感</span>：測定ノイズを増幅</li>
+<li><span class="negative">❌ 高周波振動</span>：不必要な細かい制御</li>
+</ul>
+
+<p><strong>$K_d$を小さくした場合：</strong></p>
+<ul>
+<li><span class="positive">✅ ノイズに強い</span></li>
+<li><span class="negative">❌ オーバーシュートが大きい</span></li>
+</ul>
+</div>
+
+<h4>3.3.4 微分動作の実装上の注意</h4>
+
+<div class="troubleshooting-box">
+<p><strong>純粋な微分の問題点：</strong></p>
+<ul>
+<li>ノイズを大幅に増幅</li>
+<li>高周波で不安定化</li>
+</ul>
+
+<p><strong>実用的な解決策：</strong></p>
+<ul>
+<li><strong>不完全微分</strong>：$G_d(s) = \frac{sT_d}{1 + s\alpha T_d}$ （$\alpha = 0.1$ 程度）</li>
+<li><strong>ローパスフィルタ</strong>との組み合わせ</li>
+</ul>
+</div>
+
+<h2>4. PID制御の伝達関数表現</h2>
+
+<div class="theory-box">
+<p>ラプラス変換を用いると、PID制御器の伝達関数は：</p>
+
+<p><strong>並列形：</strong></p>
+<p>$$C(s) = K_p + \frac{K_i}{s} + K_d s$$</p>
+
+<p><strong>標準形：</strong></p>
+<p>$$C(s) = K_p \left( 1 + \frac{1}{T_i s} + T_d s \right)$$</p>
+</div>
+
+<h2>5. PIDパラメータの調整方法：実践的アプローチ</h2>
+
+<h3>5.1 調整の基本方針</h3>
+
+<p>PIDパラメータの調整は<strong>技能</strong>であり<strong>科学</strong>でもあります。初学者には以下の段階的アプローチを推奨します。</p>
+
+<h4>5.1.1 調整前の準備</h4>
+
+<div class="step-box">
+<p><strong>1. システムの理解</strong></p>
+<ul>
+<li>制御対象の特性を把握（遅い系？速い系？）</li>
+<li>安全な動作範囲の確認</li>
+<li>センサとアクチュエータの特性確認</li>
+</ul>
+
+<p><strong>2. 目標設定</strong></p>
+<ul>
+<li>応答速度の要求</li>
+<li>オーバーシュートの許容範囲</li>
+<li>定常精度の要求</li>
+</ul>
+
+<p><strong>3. 初期設定</strong></p>
+<ul>
+<li>すべてのゲインを0に設定</li>
+<li>制御出力の上下限設定</li>
+<li>サンプリング周期の設定</li>
+</ul>
+</div>
+
+<h3>5.2 段階的手動調整法（推奨）</h3>
+
+<h4>Step 1: P制御の調整</h4>
+
+<div class="step-box">
+<p><strong>目標：</strong> システムの基本的な応答特性を掴む</p>
+
+<p><strong>手順：</strong></p>
+<ol>
+<li>$K_i = 0, K_d = 0$ に設定</li>
+<li>$K_p = 0.1$ 程度から開始</li>
+<li>$K_p$ を徐々に増加（約1.5倍ずつ）</li>
+<li>以下の現象を観察：
+   <ul>
+     <li>$K_p$ 小：応答が遅い、残留偏差大</li>
+     <li>$K_p$ 適正：適度な応答速度、多少の残留偏差</li>
+     <li>$K_p$ 大：速い応答、大きなオーバーシュート</li>
+     <li>$K_p$ 過大：持続振動発生</li>
+   </ul>
+</li>
+</ol>
+
+<p><strong>適正値の判断基準：</strong></p>
+<ul>
+<li>オーバーシュート < 20%</li>
+<li>振動が2-3回で収束</li>
+<li>残留偏差は無視（次のステップで解決）</li>
+</ul>
+</div>
+
+<h4>Step 2: I動作の追加</h4>
+
+<div class="step-box">
+<p><strong>目標：</strong> 定常偏差を除去</p>
+
+<p><strong>手順：</strong></p>
+<ol>
+<li>P制御で得られた $K_p$ の0.8倍程度を設定</li>
+<li>$K_i$ を小さな値から開始（$K_i = K_p/100$ 程度）</li>
+<li>$K_i$ を徐々に増加</li>
+<li>以下の効果を確認：
+   <ul>
+     <li>定常偏差の改善</li>
+     <li>オーバーシュートの変化</li>
+     <li>振動の有無</li>
+   </ul>
+</li>
+</ol>
+
+<p><strong>適正値の判断基準：</strong></p>
+<ul>
+<li>定常偏差がほぼゼロ</li>
+<li>オーバーシュートが許容範囲内</li>
+<li>安定した整定</li>
+</ul>
+</div>
+
+<h4>Step 3: D動作の追加（必要に応じて）</h4>
+
+<div class="step-box">
+<p><strong>目標：</strong> オーバーシュートの抑制と応答の改善</p>
+
+<p><strong>手順：</strong></p>
+<ol>
+<li>$K_d$ を小さな値から開始（$K_d = K_p \times 0.01$ 程度）</li>
+<li>オーバーシュートの減少を確認</li>
+<li>ノイズの増幅に注意</li>
+</ol>
+
+<p><strong>注意点：</strong></p>
+<ul>
+<li>D動作は必ずしも必要ではない</li>
+<li>ノイズが多い環境では使用しない</li>
+<li>過度のD動作は高周波振動の原因</li>
+</ul>
+</div>
+
+<h3>5.3 Ziegler-Nichols法（限界感度法）</h3>
+
+<div class="important-note">
+<p><strong>歴史的に重要な調整法</strong>ですが、<strong>初学者には推奨しません</strong>。理由：</p>
+<ul>
+<li>系を不安定にする必要がある（危険）</li>
+<li>現代のシステムには過度に積極的</li>
+<li>ロバスト性に欠ける</li>
+</ul>
+</div>
+
+<div class="step-box">
+<p><strong>参考として手順を示します：</strong></p>
+
+<ol>
+<li><strong>I動作とD動作を無効</strong>にし、P制御のみ</li>
+<li><strong>$K_p$ を徐々に増加</strong>させ、持続振動が発生する<strong>限界ゲイン $K_u$</strong> を発見</li>
+<li><strong>振動周期 $T_u$</strong> を測定</li>
+<li><strong>以下の表に従って設定</strong>：</li>
+</ol>
+
+<table class="tuning-table">
+<tr>
+<th>制御器</th>
+<th>$K_p$</th>
+<th>$T_i$</th>
+<th>$T_d$</th>
+</tr>
+<tr>
+<td>P</td>
+<td>$0.5 K_u$</td>
+<td>∞</td>
+<td>0</td>
+</tr>
+<tr>
+<td>PI</td>
+<td>$0.45 K_u$</td>
+<td>$T_u/1.2$</td>
+<td>0</td>
+</tr>
+<tr>
+<td>PID</td>
+<td>$0.6 K_u$</td>
+<td>$T_u/2$</td>
+<td>$T_u/8$</td>
+</tr>
+</table>
+</div>
+
+<h3>5.4 現代的な調整指針</h3>
+
+<h4>5.4.1 応答特性に基づく調整</h4>
+
+<div class="important-note">
+<p><strong>各パラメータの影響の詳細理解：</strong></p>
+
+<table class="tuning-table">
+<tr>
+<th>パラメータ↑</th>
+<th>立上り</th>
+<th>オーバーシュート</th>
+<th>整定</th>
+<th>定常偏差</th>
+<th>備考</th>
+</tr>
+<tr>
+<td>$K_p$</td>
+<td>↓速く</td>
+<td>↑増加</td>
+<td>±</td>
+<td>↓減少</td>
+<td>基本性能決定</td>
+</tr>
+<tr>
+<td>$K_i$</td>
+<td>↓速く</td>
+<td>↑増加</td>
+<td>↑遅く</td>
+<td>ゼロ</td>
+<td>精度向上</td>
+</tr>
+<tr>
+<td>$K_d$</td>
+<td>±</td>
+<td>↓減少</td>
+<td>↓速く</td>
+<td>±</td>
+<td>安定性向上</td>
+</tr>
+</table>
+</div>
+
+<h4>5.4.2 用途別推奨設定</h4>
+
+<div class="important-note">
+<p><strong>位置決め制御（精度重視）：</strong></p>
+<ul>
+<li>PI制御推奨（D項はノイズで不安定化）</li>
+<li>$K_p$：中程度、$K_i$：小〜中</li>
+</ul>
+
+<p><strong>速度制御（応答性重視）：</strong></p>
+<ul>
+<li>PID制御推奨</li>
+<li>$K_p$：大、$K_i$：中、$K_d$：小</li>
+</ul>
+
+<p><strong>温度制御（安定性重視）：</strong></p>
+<ul>
+<li>PI制御推奨</li>
+<li>$K_p$：小〜中、$K_i$：小</li>
+</ul>
+</div>
+
+<h3>5.5 調整時のトラブルシューティング</h3>
+
+<div class="troubleshooting-box">
+<h4>問題1: 振動が止まらない</h4>
+
+<p><strong>原因と対策：</strong></p>
+<ul>
+<li>$K_p$ 過大 → 減少</li>
+<li>$K_i$ 過大 → 減少</li>
+<li>$K_d$ 過大 → 減少</li>
+<li>ノイズ → フィルタ追加</li>
+</ul>
+
+<h4>問題2: 応答が遅すぎる</h4>
+
+<p><strong>原因と対策：</strong></p>
+<ul>
+<li>$K_p$ 不足 → 増加</li>
+<li>$K_i$ 不足 → 増加</li>
+<li>システム限界 → ハードウェア改良</li>
+</ul>
+
+<h4>問題3: オーバーシュート過大</h4>
+
+<p><strong>原因と対策：</strong></p>
+<ul>
+<li>$K_p$ 過大 → 減少</li>
+<li>$K_i$ 過大 → 減少</li>
+<li>$K_d$ 不足 → 増加（ノイズ許容時）</li>
+</ul>
+
+<h4>問題4: 定常偏差が残る</h4>
+
+<p><strong>原因と対策：</strong></p>
+<ul>
+<li>$K_i$ 不足 → 増加</li>
+<li>積分飽和 → アンチワインドアップ</li>
+<li>非線形性 → ゲインスケジューリング</li>
+</ul>
+</div>
+
+<h3>5.6 実際の調整例</h3>
+
+<div class="example-box">
+<h4>例：温度制御系の調整</h4>
+
+<p><strong>システム：</strong> 電気炉の温度制御（目標200℃）</p>
+
+<p><strong>初期観察：</strong></p>
+<ul>
+<li>ステップ応答の立上り時間：約30秒</li>
+<li>オーバーシュートなし（P制御時）</li>
+<li>定常偏差：約10℃</li>
+</ul>
+
+<p><strong>調整過程：</strong></p>
+
+<p><strong>1. P制御調整</strong></p>
+<ul>
+<li>$K_p = 1.0$ → 立上り30秒、定常偏差10℃</li>
+<li>$K_p = 2.0$ → 立上り20秒、定常偏差5℃</li>
+<li>$K_p = 4.0$ → 立上り15秒、定常偏差3℃、軽微振動</li>
+<li><strong>選択：$K_p = 3.0$</strong>（バランス点）</li>
+</ul>
+
+<p><strong>2. I動作追加</strong></p>
+<ul>
+<li>$K_i = 0.1$ → 定常偏差1℃に改善</li>
+<li>$K_i = 0.2$ → 定常偏差ほぼゼロ</li>
+<li>$K_i = 0.3$ → オーバーシュート5℃</li>
+<li><strong>選択：$K_i = 0.2$</strong></li>
+</ul>
+
+<p><strong>3. 最終設定</strong></p>
+<ul>
+<li>$K_p = 3.0, K_i = 0.2, K_d = 0$（D項不使用）</li>
+<li>性能：立上り18秒、オーバーシュート2℃、定常偏差0℃</li>
+</ul>
+</div>
+
+<h2>6. PID制御の問題点と対策</h2>
+
+<h3>6.1 積分飽和（Integral Windup）</h3>
+
+<div class="troubleshooting-box">
+<p><strong>問題：</strong></p>
+<ul>
+<li>大きな偏差が長時間続くと積分項が過大に蓄積</li>
+<li>飽和後に大きなオーバーシュートが発生</li>
+</ul>
+
+<p><strong>対策：</strong></p>
+<ul>
+<li>アンチワインドアップ機構の実装</li>
+<li>積分項の上下限リミット設定</li>
+<li>条件付き積分（偏差が小さいときのみ積分）</li>
+</ul>
+</div>
+
+<h3>6.2 微分キック（Derivative Kick）</h3>
+
+<div class="troubleshooting-box">
+<p><strong>問題：</strong></p>
+<ul>
+<li>目標値の急変時に微分項が大きなスパイクを発生</li>
+</ul>
+
+<p><strong>対策：</strong></p>
+<ul>
+<li>目標値の微分を使わず、出力の微分を使用</li>
+<li>微分フィルタの導入</li>
+</ul>
+</div>
+
+<h3>6.3 ノイズへの感度</h3>
+
+<div class="troubleshooting-box">
+<p><strong>問題：</strong></p>
+<ul>
+<li>微分動作がセンサノイズを増幅</li>
+</ul>
+
+<p><strong>対策：</strong></p>
+<ul>
+<li>ローパスフィルタの導入</li>
+<li>不完全微分の使用</li>
+</ul>
+</div>
+
+<h2>7. デジタル実装</h2>
+
+<div class="theory-box">
+<p>離散時間系でのPID制御器の実装：</p>
+
+<p><strong>差分方程式：</strong></p>
+<p>$$u[k] = K_p e[k] + K_i T_s \sum_{j=0}^{k} e[j] + K_d \frac{e[k] - e[k-1]}{T_s}$$</p>
+
+<p>ここで、$T_s$ はサンプリング周期です。</p>
+
+<p><strong>速度形アルゴリズム：</strong></p>
+<p>$$\Delta u[k] = u[k] - u[k-1]$$</p>
+<p>$$\Delta u[k] = K_p(e[k] - e[k-1]) + K_i T_s e[k] + K_d \frac{e[k] - 2e[k-1] + e[k-2]}{T_s}$$</p>
+</div>
+
+<h2>8. 具体例</h2>
+
+<h3>例1：温度制御系</h3>
+
+<div class="example-box">
+<p><strong>システム：</strong> 電気ヒーターによる炉の温度制御</p>
+
+<p><strong>パラメータ：</strong></p>
+<ul>
+<li>目標温度：200°C</li>
+<li>測定温度範囲：0-300°C</li>
+<li>制御周期：1秒</li>
+</ul>
+
+<p><strong>PID設定例：</strong></p>
+<ul>
+<li>$K_p = 2.0$</li>
+<li>$K_i = 0.5$</li>
+<li>$K_d = 0.1$</li>
+</ul>
+</div>
+
+<h3>例2：モータ速度制御</h3>
+
+<div class="example-box">
+<p><strong>システム：</strong> DCモータの回転速度制御</p>
+
+<p><strong>パラメータ：</strong></p>
+<ul>
+<li>目標速度：1000 rpm</li>
+<li>測定範囲：0-2000 rpm</li>
+<li>制御周期：10 ms</li>
+</ul>
+
+<p><strong>PID設定例：</strong></p>
+<ul>
+<li>$K_p = 0.8$</li>
+<li>$K_i = 0.2$</li>
+<li>$K_d = 0.05$</li>
+</ul>
+</div>
+
+<h2>9. 演習問題</h2>
+
+<h3>問題1</h3>
+<p>1次遅れ系 $G(s) = \frac{1}{s+1}$ に対して、P制御、PI制御、PID制御をそれぞれ適用した場合の閉ループ伝達関数を求めよ。</p>
+
+<h3>問題2</h3>
+<p>Ziegler-Nicholsの限界感度法において、$K_u = 4.0$、$T_u = 2.0$ [s] が得られた。PID制御器のパラメータ $K_p$、$T_i$、$T_d$ を求めよ。</p>
+
+<h3>問題3</h3>
+<p>以下の状況でPIDパラメータをどのように調整すべきか説明せよ：</p>
+<ul>
+<li>a) オーバーシュートが大きすぎる</li>
+<li>b) 定常偏差が残る</li>
+<li>c) 応答が遅すぎる</li>
+</ul>
+
+<h2>10. まとめ：PID制御の本質と実践</h2>
+
+<h3>10.1 PID制御の本質的理解</h3>
+
+<div class="motivation-box">
+<p><strong>3つの時間軸への対応：</strong></p>
+<ul>
+<li><strong>P（比例）</strong>：<strong>現在</strong>の偏差への即座の反応</li>
+<li><strong>I（積分）</strong>：<strong>過去</strong>の偏差蓄積への継続的補正</li>
+<li><strong>D（微分）</strong>：<strong>未来</strong>の変化への予測的制御</li>
+</ul>
+
+<p><strong>人間の制御行動との類似性：</strong></p>
+<ul>
+<li>直感的で理解しやすい</li>
+<li>多くの制御問題に適用可能</li>
+<li>パラメータの物理的意味が明確</li>
+</ul>
+</div>
+
+<h3>10.2 実践的な重要ポイント</h3>
+
+<div class="important-note">
+<p><strong>調整の基本原則：</strong></p>
+<ol>
+<li><strong>安全第一</strong>：システムを壊さない範囲で調整</li>
+<li><strong>段階的アプローチ</strong>：P→I→Dの順番で調整</li>
+<li><strong>トレードオフの理解</strong>：速応性 vs 安定性</li>
+<li><strong>用途に応じた選択</strong>：PI制御で十分な場合が多い</li>
+</ol>
+
+<p><strong>よくある間違い：</strong></p>
+<ul>
+<li>D項を必ず使わなければならないという思い込み</li>
+<li>Ziegler-Nichols法への過度の依存</li>
+<li>ノイズ環境でのD項使用</li>
+<li>積分飽和への無配慮</li>
+</ul>
+</div>
+
+<h3>10.3 現代制御理論との関係</h3>
+
+<div class="theory-box">
+<p>PID制御は古典制御の代表ですが：</p>
+<ul>
+<li><strong>現代制御理論の基礎</strong>として重要</li>
+<li><strong>状態フィードバック制御</strong>の特殊形</li>
+<li><strong>最適制御</strong>の実用的近似として機能</li>
+</ul>
+</div>
+
+<h3>10.4 今後の学習への橋渡し</h3>
+
+<div class="motivation-box">
+<p>次の学習ステップ：</p>
+<ul>
+<li>システムのモデリング（伝達関数、状態空間）</li>
+<li>安定性解析（根軌跡、周波数応答）</li>
+<li>現代制御理論（状態フィードバック、最適制御）</li>
+<li>適応制御、ロバスト制御</li>
+</ul>
+
+<p>PID制御の理解が、これらすべての基礎となります。</p>
+</div>
+
+<h2>次回予告</h2>
+
+<p>次回は、<strong>状態方程式の解</strong>について学びます。線形システムの時間応答を解析的に求める方法を習得します。</p>
+
+<h2>参考文献</h2>
+
+<ol>
+<li>Karl J. Åström & Tore Hägglund, "PID Controllers: Theory, Design, and Tuning"</li>
+<li>須田信英『PID制御』朝倉書店</li>
+<li>足立修一『MATLABによる制御工学』東京電機大学出版局</li>
+</ol>
+
     </div>
 
+    <!-- インタラクティブPIDシミュレータの追加 -->
     <script>
-        // スライダーの値を表示更新
-        document.getElementById('kp-slider').addEventListener('input', function() {
-            document.getElementById('kp-value').textContent = this.value;
-        });
-        
-        document.getElementById('ki-slider').addEventListener('input', function() {
-            document.getElementById('ki-value').textContent = this.value;
-        });
-        
-        document.getElementById('kd-slider').addEventListener('input', function() {
-            document.getElementById('kd-value').textContent = this.value;
-        });
+        // MathJax設定の再初期化
+        window.MathJax = window.MathJax || {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
 
-        document.getElementById('setpoint-slider').addEventListener('input', function() {
-            document.getElementById('setpoint-value').textContent = this.value;
-        });
-
-        function runPIDSimulation() {
-            const canvas = document.getElementById('pid-canvas');
+        // 積分飽和デモンストレーション用のキャンバスを追加
+        function addWindupDemo() {
+            const container = document.querySelector('.container');
+            
+            // 積分飽和デモセクションを追加
+            const demoSection = document.createElement('div');
+            demoSection.innerHTML = `
+                <h2>積分飽和（Integral Windup）実証デモ</h2>
+                
+                <div style="background: #f0f8ff; padding: 20px; border: 2px solid #4169e1; margin: 20px 0; border-radius: 8px;">
+                    <h3>🔧 アンチワインドアップの効果比較</h3>
+                    <p>大きな目標値変化時の積分飽和現象とアンチワインドアップの効果を比較できます。</p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            <h4>PI制御パラメータ</h4>
+                            <label>Kp: <span id="kp-display">1.5</span></label>
+                            <input type="range" id="kp-windup" min="0.5" max="3" step="0.1" value="1.5" style="width: 100%; margin: 10px 0;">
+                            
+                            <label>Ki: <span id="ki-display">0.8</span></label>
+                            <input type="range" id="ki-windup" min="0.2" max="2" step="0.1" value="0.8" style="width: 100%; margin: 10px 0;">
+                            
+                            <label>制御出力上限: <span id="umax-display">5</span></label>
+                            <input type="range" id="umax-windup" min="2" max="10" step="0.5" value="5" style="width: 100%; margin: 10px 0;">
+                        </div>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            <h4>シミュレーション設定</h4>
+                            <label>目標値変更タイミング (秒): <span id="step-time-display">2</span></label>
+                            <input type="range" id="step-time" min="1" max="5" step="0.5" value="2" style="width: 100%; margin: 10px 0;">
+                            
+                            <label>目標値の大きさ: <span id="step-size-display">3</span></label>
+                            <input type="range" id="step-size" min="1" max="5" step="0.5" value="3" style="width: 100%; margin: 10px 0;">
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button onclick="runWindupComparison()" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">通常のPI制御</button>
+                        <button onclick="runAntiWindupComparison()" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">アンチワインドアップ付き</button>
+                        <button onclick="runBothComparison()" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">両方比較</button>
+                        <button onclick="clearWindupCanvas()" style="background: #95a5a6; color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">クリア</button>
+                    </div>
+                    
+                    <canvas id="windup-canvas" width="900" height="500" style="border: 2px solid #ddd; border-radius: 5px; display: block; margin: 20px auto; background: white;"></canvas>
+                    
+                    <div style="background: #263238; color: #aed581; padding: 15px; border-radius: 5px; margin: 15px 0; font-family: 'Courier New', monospace; font-size: 0.9em;">
+                        <div id="windup-analysis"></div>
+                    </div>
+                </div>
+            `;
+            
+            // 第6章の前に挿入
+            const section6 = container.querySelector('h2');
+            let targetSection = null;
+            const headings = container.querySelectorAll('h2');
+            for (let h of headings) {
+                if (h.textContent.includes('PID制御の問題点と対策')) {
+                    targetSection = h;
+                    break;
+                }
+            }
+            
+            if (targetSection) {
+                targetSection.parentNode.insertBefore(demoSection, targetSection);
+            } else {
+                container.appendChild(demoSection);
+            }
+            
+            // スライダーのイベントリスナーを追加
+            setupWindupSliders();
+        }
+        
+        function setupWindupSliders() {
+            const sliders = [
+                { id: 'kp-windup', display: 'kp-display' },
+                { id: 'ki-windup', display: 'ki-display' },
+                { id: 'umax-windup', display: 'umax-display' },
+                { id: 'step-time', display: 'step-time-display' },
+                { id: 'step-size', display: 'step-size-display' }
+            ];
+            
+            sliders.forEach(slider => {
+                const element = document.getElementById(slider.id);
+                const display = document.getElementById(slider.display);
+                
+                if (element && display) {
+                    element.addEventListener('input', function() {
+                        display.textContent = this.value;
+                    });
+                }
+            });
+        }
+        
+        function runWindupComparison() {
+            simulateWindup(false, '#e74c3c', '通常のPI制御（赤）');
+        }
+        
+        function runAntiWindupComparison() {
+            simulateWindup(true, '#27ae60', 'アンチワインドアップ付き（緑）');
+        }
+        
+        function runBothComparison() {
+            clearWindupCanvas();
+            setTimeout(() => simulateWindup(false, '#e74c3c', '通常のPI制御（赤）'), 100);
+            setTimeout(() => simulateWindup(true, '#27ae60', 'アンチワインドアップ付き（緑）'), 200);
+        }
+        
+        function clearWindupCanvas() {
+            const canvas = document.getElementById('windup-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawWindupAxes(ctx, canvas.width, canvas.height);
+                document.getElementById('windup-analysis').innerHTML = '解析結果がここに表示されます...';
+            }
+        }
+        
+        function simulateWindup(antiWindup, color, label) {
+            const canvas = document.getElementById('windup-canvas');
+            if (!canvas) return;
+            
             const ctx = canvas.getContext('2d');
             
-            const Kp = parseFloat(document.getElementById('kp-slider').value);
-            const Ki = parseFloat(document.getElementById('ki-slider').value);
-            const Kd = parseFloat(document.getElementById('kd-slider').value);
-            const setpoint = parseFloat(document.getElementById('setpoint-slider').value);
-            
-            // クリア
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 軸の描画
-            drawAxes(ctx, canvas.width, canvas.height);
+            // パラメータ取得
+            const Kp = parseFloat(document.getElementById('kp-windup').value);
+            const Ki = parseFloat(document.getElementById('ki-windup').value);
+            const uMax = parseFloat(document.getElementById('umax-windup').value);
+            const stepTime = parseFloat(document.getElementById('step-time').value);
+            const stepSize = parseFloat(document.getElementById('step-size').value);
             
             // シミュレーションパラメータ
             const dt = 0.01;
-            const tMax = 10;
-            const steps = tMax / dt;
+            const tMax = 12;
+            const steps = Math.floor(tMax / dt);
             
-            // システム: 1次遅れ系 G(s) = 1/(s+1)
-            let y = 0;       // 出力
-            let integral = 0; // 積分項
-            let prevError = 0; // 前回の偏差
+            let y = 0;           // システム出力
+            let integral = 0;    // 積分項
+            let u = 0;          // 制御出力
+            let uSat = 0;       // 飽和後の制御出力
             
             const scaleX = (canvas.width - 100) / tMax;
-            const scaleY = 150;
-            const offsetY = canvas.height - 80;
+            const scaleY = 60; // 出力用スケール
+            const offsetY = canvas.height - 100;
             
-            // 応答の描画
-            ctx.strokeStyle = '#f5576c';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
+            // データ格納用配列
+            const timeData = [];
+            const outputData = [];
+            const controlData = [];
+            const integralData = [];
             
             let maxOvershoot = 0;
             let settlingTime = 0;
-            let steadyStateError = 0;
+            let currentSetpoint = 0;
             
+            // シミュレーション実行
             for (let i = 0; i < steps; i++) {
                 const t = i * dt;
-                const x = 50 + t * scaleX;
-                const yPixel = offsetY - y * scaleY;
                 
-                if (i === 0) {
-                    ctx.moveTo(x, yPixel);
-                } else {
-                    ctx.lineTo(x, yPixel);
+                // 目標値のステップ変化
+                let setpoint = 0;
+                if (t >= stepTime && t < stepTime + 4) {
+                    setpoint = stepSize;
+                } else if (t >= stepTime + 4) {
+                    setpoint = stepSize * 0.5; // より複雑なパターン
                 }
                 
-                // PID制御
-                const error = setpoint - y;
-                integral += error * dt;
-                const derivative = (error - prevError) / dt;
-                
-                const u = Kp * error + Ki * integral + Kd * derivative;
-                
-                // システム応答（1次遅れ）
-                const dydt = -y + u;
-                y += dydt * dt;
-                
-                prevError = error;
-                
-                // 性能指標の計算
-                if (y > maxOvershoot) maxOvershoot = y;
-                if (Math.abs(error) > 0.02 * setpoint) {
-                    settlingTime = t;
-                }
-                if (i === steps - 1) {
-                    steadyStateError = Math.abs(error);
-                }
-            }
-            
-            ctx.stroke();
-            
-            // 目標値のライン
-            ctx.strokeStyle = '#4169e1';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.moveTo(50, offsetY - setpoint * scaleY);
-            ctx.lineTo(canvas.width - 50, offsetY - setpoint * scaleY);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            
-            // ラベル
-            ctx.fillStyle = '#333';
-            ctx.font = '14px Arial';
-            ctx.fillText('時間 (s)', canvas.width - 70, offsetY + 40);
-            ctx.fillText('出力', 10, 30);
-            
-            // 性能指標の表示
-            const overshoot = ((maxOvershoot - setpoint) / setpoint * 100).toFixed(1);
-            const metrics = `
-性能指標:
-  オーバーシュート: ${overshoot}%
-  整定時間: ${settlingTime.toFixed(2)} s
-  定常偏差: ${steadyStateError.toFixed(4)}
-  
-PIDパラメータ:
-  Kp = ${Kp}, Ki = ${Ki}, Kd = ${Kd}
-            `;
-            document.getElementById('performance-metrics').textContent = metrics;
-        }
-
-        function drawAxes(ctx, width, height) {
-            const offsetY = height - 80;
-            
-            ctx.strokeStyle = '#ccc';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(50, 20);
-            ctx.lineTo(50, offsetY);
-            ctx.lineTo(width - 50, offsetY);
-            ctx.stroke();
-            
-            // 目盛り
-            for (let i = 0; i <= 10; i++) {
-                const x = 50 + i * (width - 100) / 10;
-                ctx.beginPath();
-                ctx.moveTo(x, offsetY);
-                ctx.lineTo(x, offsetY + 5);
-                ctx.stroke();
-                
-                ctx.fillStyle = '#666';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(i.toString(), x, offsetY + 20);
-            }
-        }
-
-        function resetPID() {
-            document.getElementById('kp-slider').value = 1;
-            document.getElementById('ki-slider').value = 0.5;
-            document.getElementById('kd-slider').value = 0.2;
-            document.getElementById('setpoint-slider').value = 1;
-            
-            document.getElementById('kp-value').textContent = '1.0';
-            document.getElementById('ki-value').textContent = '0.5';
-            document.getElementById('kd-value').textContent = '0.2';
-            document.getElementById('setpoint-value').textContent = '1.0';
-            
-            runPIDSimulation();
-        }
-
-        function loadPreset(type) {
-            if (type === 'p') {
-                document.getElementById('kp-slider').value = 2;
-                document.getElementById('ki-slider').value = 0;
-                document.getElementById('kd-slider').value = 0;
-                document.getElementById('kp-value').textContent = '2.0';
-                document.getElementById('ki-value').textContent = '0.0';
-                document.getElementById('kd-value').textContent = '0.0';
-            } else if (type === 'pi') {
-                document.getElementById('kp-slider').value = 1.8;
-                document.getElementById('ki-slider').value = 0.9;
-                document.getElementById('kd-slider').value = 0;
-                document.getElementById('kp-value').textContent = '1.8';
-                document.getElementById('ki-value').textContent = '0.9';
-                document.getElementById('kd-value').textContent = '0.0';
-            } else if (type === 'pid') {
-                document.getElementById('kp-slider').value = 2.4;
-                document.getElementById('ki-slider').value = 1.0;
-                document.getElementById('kd-slider').value = 0.25;
-                document.getElementById('kp-value').textContent = '2.4';
-                document.getElementById('ki-value').textContent = '1.0';
-                document.getElementById('kd-value').textContent = '0.25';
-            }
-            runPIDSimulation();
-        }
-
-        function demonstrateWindup(antiWindup) {
-            const canvas = document.getElementById('windup-canvas');
-            const ctx = canvas.getContext('2d');
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            const offsetY = canvas.height - 60;
-            drawAxes2(ctx, canvas.width, canvas.height, offsetY);
-            
-            const dt = 0.01;
-            const tMax = 10;
-            const steps = tMax / dt;
-            
-            let y = 0;
-            let integral = 0;
-            let u = 0;
-            const Kp = 1.5;
-            const Ki = 0.8;
-            const uMax = 5; // 飽和限界
-            
-            const scaleX = (canvas.width - 100) / tMax;
-            const scaleY = 40;
-            
-            ctx.strokeStyle = antiWindup ? '#4caf50' : '#f5576c';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            
-            for (let i = 0; i < steps; i++) {
-                const t = i * dt;
-                const x = 50 + t * scaleX;
-                const yPixel = offsetY - y * scaleY;
-                
-                if (i === 0) {
-                    ctx.moveTo(x, yPixel);
-                } else {
-                    ctx.lineTo(x, yPixel);
-                }
-                
-                // 目標値をステップ状に変化
-                const setpoint = t < 2 ? 0 : (t < 6 ? 2 : 1);
                 const error = setpoint - y;
                 
-                // PI制御
-                if (!antiWindup || Math.abs(u - Math.max(-uMax, Math.min(uMax, u))) < 0.01) {
+                // PI制御の計算
+                // アンチワインドアップ実装
+                if (antiWindup) {
+                    // 制御出力が飽和していない場合のみ積分を更新
+                    if (Math.abs(u - uSat) < 0.1) {
+                        integral += error * dt;
+                    }
+                    // さらに、積分項自体にも制限を設ける
+                    integral = Math.max(-uMax/Ki, Math.min(uMax/Ki, integral));
+                } else {
+                    // 通常の積分（飽和無視）
                     integral += error * dt;
                 }
                 
                 u = Kp * error + Ki * integral;
                 
-                // 飽和
-                if (u > uMax) u = uMax;
-                if (u < -uMax) u = -uMax;
+                // 制御出力の飽和処理
+                uSat = Math.max(-uMax, Math.min(uMax, u));
                 
-                // システム応答
-                const dydt = -y + u;
+                // システムの応答（1次遅れ系 + 若干の非線形性）
+                const tau = 1.2; // 時定数
+                const dydt = (-y + uSat) / tau;
                 y += dydt * dt;
+                
+                // データ記録
+                timeData.push(t);
+                outputData.push(y);
+                controlData.push(uSat);
+                integralData.push(integral);
+                
+                // 性能指標計算
+                if (y > maxOvershoot) maxOvershoot = y;
+                if (t > stepTime + 1 && Math.abs(error) > 0.02 * Math.abs(setpoint) && setpoint > 0) {
+                    settlingTime = t - stepTime;
+                }
+                
+                currentSetpoint = setpoint;
             }
             
+            // 描画
+            drawWindupResponse(ctx, timeData, outputData, controlData, integralData, 
+                             stepTime, stepSize, scaleX, scaleY, offsetY, color, antiWindup);
+            
+            // 解析結果更新
+            updateWindupAnalysis(antiWindup, maxOvershoot, settlingTime, currentSetpoint, label);
+        }
+        
+        function drawWindupResponse(ctx, timeData, outputData, controlData, integralData, 
+                                  stepTime, stepSize, scaleX, scaleY, offsetY, color, antiWindup) {
+            
+            // 目標値の描画
+            ctx.strokeStyle = '#34495e';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            
+            // ステップ目標値
+            ctx.moveTo(50, offsetY);
+            ctx.lineTo(50 + stepTime * scaleX, offsetY);
+            ctx.lineTo(50 + stepTime * scaleX, offsetY - stepSize * scaleY);
+            ctx.lineTo(50 + (stepTime + 4) * scaleX, offsetY - stepSize * scaleY);
+            ctx.lineTo(50 + (stepTime + 4) * scaleX, offsetY - stepSize * 0.5 * scaleY);
+            ctx.lineTo(50 + 12 * scaleX, offsetY - stepSize * 0.5 * scaleY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // システム出力の描画
+            ctx.strokeStyle = color;
+            ctx.lineWidth = antiWindup ? 3 : 2;
+            if (!antiWindup) ctx.setLineDash([8, 4]);
+            
+            ctx.beginPath();
+            for (let i = 0; i < timeData.length; i++) {
+                const x = 50 + timeData[i] * scaleX;
+                const y = offsetY - outputData[i] * scaleY;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 制御出力の描画（小さく）
+            const controlScaleY = 20;
+            const controlOffsetY = offsetY + 80;
+            
+            ctx.strokeStyle = antiWindup ? '#27ae60' : '#e74c3c';
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.7;
+            
+            ctx.beginPath();
+            for (let i = 0; i < timeData.length; i++) {
+                const x = 50 + timeData[i] * scaleX;
+                const y = controlOffsetY - controlData[i] * controlScaleY;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawWindupAxes(ctx, width, height) {
+            const offsetY = height - 100;
+            
+            // 主軸
+            ctx.strokeStyle = '#bdc3c7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(50, 20);
+            ctx.lineTo(50, offsetY + 100);
+            ctx.lineTo(width - 50, offsetY + 100);
             ctx.stroke();
             
-            // ラベル
-            ctx.fillStyle = '#333';
-            ctx.font = '14px Arial';
-            const label = antiWindup ? 'アンチワインドアップ付き（緑）' : '通常のPI制御（赤）';
-            ctx.fillText(label, 100, 30);
-        }
-
-        function drawAxes2(ctx, width, height, offsetY) {
-            ctx.strokeStyle = '#ccc';
-            ctx.lineWidth = 1;
+            // 出力軸
             ctx.beginPath();
             ctx.moveTo(50, 20);
             ctx.lineTo(50, offsetY);
             ctx.lineTo(width - 50, offsetY);
             ctx.stroke();
+            
+            // 目盛り（時間軸）
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 12; i += 2) {
+                const x = 50 + i * (width - 100) / 12;
+                ctx.beginPath();
+                ctx.moveTo(x, offsetY);
+                ctx.lineTo(x, offsetY + 5);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#7f8c8d';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(i.toString(), x, offsetY + 20);
+            }
+            
+            // ラベル
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('時間 (秒)', width/2, height - 10);
+            
+            ctx.save();
+            ctx.translate(20, height/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('出力 / 制御入力', 0, 0);
+            ctx.restore();
+            
+            // 凡例エリア
+            ctx.fillStyle = '#34495e';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('破線: 目標値', width - 150, 30);
+            ctx.fillText('実線/破線: システム出力', width - 150, 45);
+            ctx.fillText('下部: 制御入力', width - 150, 60);
         }
+        
+        function updateWindupAnalysis(antiWindup, maxOvershoot, settlingTime, setpoint, label) {
+            const analysisDiv = document.getElementById('windup-analysis');
+            const overshootPercent = setpoint > 0 ? ((maxOvershoot - setpoint) / setpoint * 100) : 0;
+            
+            const currentContent = analysisDiv.innerHTML;
+            const newAnalysis = \`
+\${label}:
+  最大オーバーシュート: \${maxOvershoot.toFixed(2)} (\${overshootPercent.toFixed(1)}%)
+  おおよその整定時間: \${settlingTime.toFixed(1)} 秒
+  \${antiWindup ? 'アンチワインドアップ効果: 積分飽和を抑制' : ' 積分飽和: 大きなオーバーシュートが発生'}
 
-        // 初期化
-        runPIDSimulation();
+\`;
+            
+            if (currentContent.includes('解析結果がここに')) {
+                analysisDiv.innerHTML = newAnalysis;
+            } else {
+                analysisDiv.innerHTML = currentContent + newAnalysis;
+            }
+        }
+        
+        // ページ読み込み時にデモを追加
+        document.addEventListener('DOMContentLoaded', function() {
+            // 少し遅延させてMathJaxの処理を待つ
+            setTimeout(addWindupDemo, 1000);
+        });
+        
+        // フォールバック：MathJaxの処理後に実行
+        if (window.MathJax && window.MathJax.startup) {
+            window.MathJax.startup.promise.then(() => {
+                setTimeout(addWindupDemo, 500);
+            });
+        }
     </script>
 </body>
 </html>
