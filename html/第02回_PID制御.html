@@ -909,6 +909,49 @@ r(t) ─→ (+) ─→ [ PID制御器 ] ─→ u(t) ─→ [ プラント ] ─�
 </ul>
 </div>
 
+<h2>積分飽和（Integral Windup）実証デモ</h2>
+
+<div style="background: #f0f8ff; padding: 20px; border: 2px solid #4169e1; margin: 20px 0; border-radius: 8px;">
+    <h3>🔧 アンチワインドアップの効果比較</h3>
+    <p>大きな目標値変化時の積分飽和現象とアンチワインドアップの効果を比較できます。</p>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h4>PI制御パラメータ</h4>
+            <label>Kp: <span id="kp-display">1.5</span></label>
+            <input type="range" id="kp-windup" min="0.5" max="3" step="0.1" value="1.5" style="width: 100%; margin: 10px 0;">
+            
+            <label>Ki: <span id="ki-display">1.2</span></label>
+            <input type="range" id="ki-windup" min="0.2" max="2" step="0.1" value="1.2" style="width: 100%; margin: 10px 0;">
+            
+            <label>制御出力上限: <span id="umax-display">4</span></label>
+            <input type="range" id="umax-windup" min="2" max="10" step="0.5" value="4" style="width: 100%; margin: 10px 0;">
+        </div>
+        
+        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <h4>シミュレーション設定</h4>
+            <label>目標値変更タイミング (秒): <span id="step-time-display">2</span></label>
+            <input type="range" id="step-time" min="1" max="5" step="0.5" value="2" style="width: 100%; margin: 10px 0;">
+            
+            <label>目標値の大きさ: <span id="step-size-display">4</span></label>
+            <input type="range" id="step-size" min="1" max="5" step="0.5" value="4" style="width: 100%; margin: 10px 0;">
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <button onclick="runWindupComparison()" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">通常のPI制御</button>
+        <button onclick="runAntiWindupComparison()" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">アンチワインドアップ付き</button>
+        <button onclick="runBothComparison()" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">両方比較</button>
+        <button onclick="clearWindupCanvas()" style="background: #95a5a6; color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">クリア</button>
+    </div>
+    
+    <canvas id="windup-canvas" width="900" height="500" style="border: 2px solid #ddd; border-radius: 5px; display: block; margin: 20px auto; background: white;"></canvas>
+    
+    <div style="background: #263238; color: #aed581; padding: 15px; border-radius: 5px; margin: 15px 0; font-family: 'Courier New', monospace; font-size: 0.9em;">
+        <div id="windup-analysis">解析結果がここに表示されます...</div>
+    </div>
+</div>
+
 <h2>6. PID制御の問題点と対策</h2>
 
 <h3>6.1 積分飽和（Integral Windup）</h3>
@@ -1110,89 +1153,9 @@ r(t) ─→ (+) ─→ [ PID制御器 ] ─→ u(t) ─→ [ プラント ] ─�
 
     </div>
 
-    <!-- インタラクティブPIDシミュレータの追加 -->
     <script>
-        // MathJax設定の再初期化
-        window.MathJax = window.MathJax || {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']]
-            }
-        };
-
-        // 積分飽和デモンストレーション用のキャンバスを追加
-        function addWindupDemo() {
-            const container = document.querySelector('.container');
-            
-            // 積分飽和デモセクションを追加
-            const demoSection = document.createElement('div');
-            demoSection.innerHTML = `
-                <h2>積分飽和（Integral Windup）実証デモ</h2>
-                
-                <div style="background: #f0f8ff; padding: 20px; border: 2px solid #4169e1; margin: 20px 0; border-radius: 8px;">
-                    <h3>🔧 アンチワインドアップの効果比較</h3>
-                    <p>大きな目標値変化時の積分飽和現象とアンチワインドアップの効果を比較できます。</p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-                        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <h4>PI制御パラメータ</h4>
-                            <label>Kp: <span id="kp-display">1.5</span></label>
-                            <input type="range" id="kp-windup" min="0.5" max="3" step="0.1" value="1.5" style="width: 100%; margin: 10px 0;">
-                            
-                            <label>Ki: <span id="ki-display">0.8</span></label>
-                            <input type="range" id="ki-windup" min="0.2" max="2" step="0.1" value="0.8" style="width: 100%; margin: 10px 0;">
-                            
-                            <label>制御出力上限: <span id="umax-display">5</span></label>
-                            <input type="range" id="umax-windup" min="2" max="10" step="0.5" value="5" style="width: 100%; margin: 10px 0;">
-                        </div>
-                        
-                        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <h4>シミュレーション設定</h4>
-                            <label>目標値変更タイミング (秒): <span id="step-time-display">2</span></label>
-                            <input type="range" id="step-time" min="1" max="5" step="0.5" value="2" style="width: 100%; margin: 10px 0;">
-                            
-                            <label>目標値の大きさ: <span id="step-size-display">3</span></label>
-                            <input type="range" id="step-size" min="1" max="5" step="0.5" value="3" style="width: 100%; margin: 10px 0;">
-                        </div>
-                    </div>
-                    
-                    <div style="text-align: center; margin: 20px 0;">
-                        <button onclick="runWindupComparison()" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">通常のPI制御</button>
-                        <button onclick="runAntiWindupComparison()" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">アンチワインドアップ付き</button>
-                        <button onclick="runBothComparison()" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">両方比較</button>
-                        <button onclick="clearWindupCanvas()" style="background: #95a5a6; color: white; border: none; padding: 12px 30px; font-size: 1em; border-radius: 25px; cursor: pointer; margin: 10px 5px;">クリア</button>
-                    </div>
-                    
-                    <canvas id="windup-canvas" width="900" height="500" style="border: 2px solid #ddd; border-radius: 5px; display: block; margin: 20px auto; background: white;"></canvas>
-                    
-                    <div style="background: #263238; color: #aed581; padding: 15px; border-radius: 5px; margin: 15px 0; font-family: 'Courier New', monospace; font-size: 0.9em;">
-                        <div id="windup-analysis"></div>
-                    </div>
-                </div>
-            `;
-            
-            // 第6章の前に挿入
-            const section6 = container.querySelector('h2');
-            let targetSection = null;
-            const headings = container.querySelectorAll('h2');
-            for (let h of headings) {
-                if (h.textContent.includes('PID制御の問題点と対策')) {
-                    targetSection = h;
-                    break;
-                }
-            }
-            
-            if (targetSection) {
-                targetSection.parentNode.insertBefore(demoSection, targetSection);
-            } else {
-                container.appendChild(demoSection);
-            }
-            
-            // スライダーのイベントリスナーを追加
-            setupWindupSliders();
-        }
-        
-        function setupWindupSliders() {
+        // スライダーの値更新
+        document.addEventListener('DOMContentLoaded', function() {
             const sliders = [
                 { id: 'kp-windup', display: 'kp-display' },
                 { id: 'ki-windup', display: 'ki-display' },
@@ -1211,7 +1174,10 @@ r(t) ─→ (+) ─→ [ PID制御器 ] ─→ u(t) ─→ [ プラント ] ─�
                     });
                 }
             });
-        }
+            
+            // キャンバスを初期化
+            clearWindupCanvas();
+        });
         
         function runWindupComparison() {
             simulateWindup(false, '#e74c3c', '通常のPI制御（赤）');
@@ -1233,7 +1199,10 @@ r(t) ─→ (+) ─→ [ PID制御器 ] ─→ u(t) ─→ [ プラント ] ─�
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 drawWindupAxes(ctx, canvas.width, canvas.height);
-                document.getElementById('windup-analysis').innerHTML = '解析結果がここに表示されます...';
+                const analysisDiv = document.getElementById('windup-analysis');
+                if (analysisDiv) {
+                    analysisDiv.innerHTML = '解析結果がここに表示されます...';
+                }
             }
         }
         
@@ -1472,18 +1441,6 @@ r(t) ─→ (+) ─→ [ PID制御器 ] ─→ u(t) ─→ [ プラント ] ─�
             }
         }
         
-        // ページ読み込み時にデモを追加
-        document.addEventListener('DOMContentLoaded', function() {
-            // 少し遅延させてMathJaxの処理を待つ
-            setTimeout(addWindupDemo, 1000);
-        });
-        
-        // フォールバック：MathJaxの処理後に実行
-        if (window.MathJax && window.MathJax.startup) {
-            window.MathJax.startup.promise.then(() => {
-                setTimeout(addWindupDemo, 500);
-            });
-        }
     </script>
 </body>
 </html>
